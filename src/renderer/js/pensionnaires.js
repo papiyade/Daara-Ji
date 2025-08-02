@@ -484,14 +484,303 @@ class Pensionnaires {
         }
     }
 
+    showAddForm() {
+        this.showForm();
+    }
+
+    editPensionnaire(id) {
+        const pensionnaire = this.pensionnaires.find(p => p.id === id);
+        if (pensionnaire) {
+            this.showForm(pensionnaire);
+        }
+    }
+
+    showForm(pensionnaire = null) {
+        const isEdit = !!pensionnaire;
+        const title = isEdit ? 'Modifier le Pensionnaire' : 'Nouveau Pensionnaire';
+        
+        const modal = Utils.createModal(title, this.generateFormHTML(pensionnaire), 'xl');
+        
+        // Initialiser les événements du formulaire
+        this.initFormEvents(modal, isEdit);
+    }
+
+    generateFormHTML(pensionnaire = null) {
+        const p = pensionnaire || {};
+        
+        return `
+            <form id="pensionnaire-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Informations personnelles -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-900 border-b pb-2">Informations personnelles</h4>
+                        
+                        <div>
+                            <label class="form-label">Prénom *</label>
+                            <input type="text" name="prenom" value="${p.prenom || ''}" class="form-input" required>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Nom *</label>
+                            <input type="text" name="nom" value="${p.nom || ''}" class="form-input" required>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Date de naissance</label>
+                            <input type="date" name="date_naissance" value="${p.date_naissance || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Lieu de naissance</label>
+                            <input type="text" name="lieu_naissance" value="${p.lieu_naissance || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Adresse</label>
+                            <textarea name="adresse" class="form-input" rows="3">${p.adresse || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Section de base *</label>
+                            <select name="section" class="form-select" required>
+                                <option value="">Sélectionner une section</option>
+                                <option value="Rawda" ${p.section === 'Rawda' ? 'selected' : ''}>Rawda</option>
+                                <option value="1ère section" ${p.section === '1ère section' ? 'selected' : ''}>1ère section</option>
+                                <option value="2ème section" ${p.section === '2ème section' ? 'selected' : ''}>2ème section</option>
+                                <option value="3ème section" ${p.section === '3ème section' ? 'selected' : ''}>3ème section</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Type de pensionnaire *</label>
+                            <select name="type_pensionnaire" class="form-select" required>
+                                <option value="">Sélectionner un type</option>
+                                <option value="Membre" ${p.type_pensionnaire === 'Membre' ? 'selected' : ''}>Membre</option>
+                                <option value="Sympathisant" ${p.type_pensionnaire === 'Sympathisant' ? 'selected' : ''}>Sympathisant</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Contacts famille -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-900 border-b pb-2">Contacts famille</h4>
+                        
+                        <div>
+                            <label class="form-label">Prénom du père</label>
+                            <input type="text" name="prenom_pere" value="${p.prenom_pere || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Téléphone du père</label>
+                            <input type="tel" name="tel_pere" value="${p.tel_pere || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Prénom de la mère</label>
+                            <input type="text" name="prenom_mere" value="${p.prenom_mere || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Nom de la mère</label>
+                            <input type="text" name="nom_mere" value="${p.nom_mere || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Téléphone de la mère</label>
+                            <input type="tel" name="tel_mere" value="${p.tel_mere || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Encadreur</label>
+                            <input type="text" name="encadreur" value="${p.encadreur || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Téléphone encadreur</label>
+                            <input type="tel" name="tel_encadreur" value="${p.tel_encadreur || ''}" class="form-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scolarité et santé -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-900 border-b pb-2">Scolarité</h4>
+                        
+                        <div>
+                            <label class="form-label">Le pensionnaire est-il scolarisé ?</label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="scolarise" value="OUI" ${p.scolarise === 'OUI' ? 'checked' : ''} class="mr-2">
+                                    OUI
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="scolarise" value="NON" ${p.scolarise === 'NON' ? 'checked' : ''} class="mr-2">
+                                    NON
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Langue d'enseignement</label>
+                            <select name="langue_enseignement" class="form-select">
+                                <option value="">Sélectionner</option>
+                                <option value="Arabe" ${p.langue_enseignement === 'Arabe' ? 'selected' : ''}>Arabe</option>
+                                <option value="Français" ${p.langue_enseignement === 'Français' ? 'selected' : ''}>Français</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Niveau d'études</label>
+                            <input type="text" name="niveau_etudes" value="${p.niveau_etudes || ''}" class="form-input">
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">École fréquentée</label>
+                            <input type="text" name="ecole_frequentee" value="${p.ecole_frequentee || ''}" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-900 border-b pb-2">Santé et participation</h4>
+                        
+                        <div>
+                            <label class="form-label">Le pensionnaire souffre-t-il d'une maladie ?</label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="maladie" value="OUI" ${p.maladie === 'OUI' ? 'checked' : ''} class="mr-2">
+                                    OUI
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="maladie" value="NON" ${p.maladie === 'NON' ? 'checked' : ''} class="mr-2">
+                                    NON
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Si oui, laquelle ?</label>
+                            <textarea name="type_maladie" class="form-input" rows="2">${p.type_maladie || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Suit-il un traitement ?</label>
+                            <textarea name="traitement" class="form-input" rows="2">${p.traitement || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Participation (somme)</label>
+                            <input type="number" name="participation" value="${p.participation || ''}" class="form-input" min="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="this.closest('.modal').remove()" class="btn-outline">Annuler</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>${pensionnaire ? 'Modifier' : 'Ajouter'}
+                    </button>
+                </div>
+            </form>
+        `;
+    }
+
+    initFormEvents(modal, isEdit) {
+        const form = modal.querySelector('#pensionnaire-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.savePensionnaire(form, isEdit);
+        });
+    }
+
     async exportToExcel() {
-        // TODO: Implémenter l'export Excel
-        Utils.showToast('Export Excel en cours de développement', 'info');
+        try {
+            Utils.showLoading();
+            
+            const data = this.filteredPensionnaires.map(p => ({
+                'Prénom': p.prenom,
+                'Nom': p.nom,
+                'Section': p.section,
+                'Type': p.type_pensionnaire,
+                'Date naissance': p.date_naissance ? Utils.formatDate(p.date_naissance) : '',
+                'Lieu naissance': p.lieu_naissance || '',
+                'Adresse': p.adresse || '',
+                'Père': p.prenom_pere || '',
+                'Tél. Père': p.tel_pere || '',
+                'Mère': p.prenom_mere ? `${p.prenom_mere} ${p.nom_mere || ''}`.trim() : '',
+                'Tél. Mère': p.tel_mere || '',
+                'Encadreur': p.encadreur || '',
+                'Tél. Encadreur': p.tel_encadreur || '',
+                'Scolarisé': p.scolarise || '',
+                'Langue': p.langue_enseignement || '',
+                'Niveau': p.niveau_etudes || '',
+                'École': p.ecole_frequentee || '',
+                'Maladie': p.maladie || '',
+                'Type maladie': p.type_maladie || '',
+                'Traitement': p.traitement || '',
+                'Participation': p.participation || '',
+                'Date inscription': p.date_inscription ? Utils.formatDate(p.date_inscription) : ''
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Pensionnaires");
+            
+            const filename = `pensionnaires_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            
+            Utils.showToast('Export Excel réussi', 'success');
+        } catch (error) {
+            Utils.handleError(error, 'lors de l\'export Excel');
+        } finally {
+            Utils.hideLoading();
+        }
     }
 
     async exportToPDF() {
-        // TODO: Implémenter l'export PDF
-        Utils.showToast('Export PDF en cours de développement', 'info');
+        try {
+            Utils.showLoading();
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Titre
+            doc.setFontSize(16);
+            doc.text('Liste des Pensionnaires - Daara Re-Creation', 20, 20);
+            doc.setFontSize(10);
+            doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 20, 30);
+            
+            // Préparer les données pour le tableau
+            const headers = [['Prénom', 'Nom', 'Section', 'Type', 'Téléphone', 'Date inscription']];
+            const data = this.filteredPensionnaires.map(p => [
+                p.prenom,
+                p.nom,
+                p.section,
+                p.type_pensionnaire,
+                p.tel_pere || p.tel_mere || '',
+                p.date_inscription ? Utils.formatDate(p.date_inscription) : ''
+            ]);
+            
+            // Créer le tableau
+            doc.autoTable({
+                head: headers,
+                body: data,
+                startY: 40,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [41, 128, 185] }
+            });
+            
+            const filename = `pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(filename);
+            
+            Utils.showToast('Export PDF réussi', 'success');
+        } catch (error) {
+            Utils.handleError(error, 'lors de l\'export PDF');
+        } finally {
+            Utils.hideLoading();
+        }
     }
 }
 

@@ -262,6 +262,41 @@ class DataStorage {
         return false;
     }
 
+    /**
+     * Ajoute un membre à une commission (alias pour compatibilité)
+     */
+    addCommissionMember(commissionId, membre) {
+        return this.addMembreCommission(commissionId, membre);
+    }
+
+    /**
+     * Supprime un membre d'une commission (alias pour compatibilité)
+     */
+    removeCommissionMember(commissionId, membreId) {
+        return this.removeMembreCommission(commissionId, membreId);
+    }
+
+    /**
+     * Met à jour un membre d'une commission
+     */
+    updateCommissionMember(commissionId, membreId, memberData) {
+        const commissions = this.getAllCommissions();
+        const commission = commissions.find(c => c.id === parseInt(commissionId));
+        if (commission && commission.membres) {
+            const membreIndex = commission.membres.findIndex(m => m.id === parseInt(membreId));
+            if (membreIndex !== -1) {
+                commission.membres[membreIndex] = {
+                    ...commission.membres[membreIndex],
+                    ...memberData,
+                    updated_at: new Date().toISOString()
+                };
+                this.setItem(this.storageKeys.commissions, commissions);
+                return commission.membres[membreIndex];
+            }
+        }
+        return null;
+    }
+
     // ==================== PRESENCES ====================
 
     /**
