@@ -1,25 +1,30 @@
 # Assets
 
-Ce dossier contient les ressources graphiques de l'application.
+Ce dossier contient les ressources de l'application.
 
-## Icônes requises
+## Icônes requises pour le packaging
 
-Pour le packaging de l'application, vous devez ajouter les icônes suivantes :
+Pour créer les exécutables, vous devez ajouter les icônes suivantes :
 
 - `icon.ico` - Icône Windows (256x256 pixels)
 - `icon.icns` - Icône macOS (512x512 pixels)  
 - `icon.png` - Icône Linux (512x512 pixels)
 
-## Génération des icônes
+## Création des icônes
 
 Vous pouvez utiliser des outils en ligne comme :
-- https://www.icoconverter.com/
-- https://iconverticons.com/
-- https://www.favicon-generator.org/
+- [ICO Convert](https://icoconvert.com/) pour créer des fichiers .ico
+- [PNG to ICNS](https://cloudconvert.com/png-to-icns) pour créer des fichiers .icns
+- Ou utiliser des outils comme GIMP, Photoshop, etc.
 
-## Recommandations
+## Icône recommandée
 
-- Utilisez une image de base en haute résolution (1024x1024 minimum)
-- Privilégiez un design simple et reconnaissable
-- Testez les icônes sur différents fonds (clair/sombre)
-- Respectez les guidelines de chaque plateforme
+L'icône devrait représenter :
+- Une mosquée ou un symbole islamique
+- Les couleurs du thème de l'application (bleu primaire)
+- Un design moderne et professionnel
+
+## Placeholder
+
+En attendant les vraies icônes, l'application utilisera l'icône par défaut d'Electron.
+

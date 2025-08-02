@@ -128,48 +128,50 @@ class Commissions {
                 return;
             }
 
-            const simpleContent = `
-                <div style="padding: 20px;">
-                    <h4 style="margin-bottom: 15px;">Ajouter un Membre - ${commission.nom}</h4>
-                    <form id="member-form">
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px;">Prénom:</label>
-                            <input type="text" name="prenom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+            const formContent = `
+                <form id="member-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="form-label">Prénom *</label>
+                            <input type="text" name="prenom" class="form-input" required>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px;">Nom:</label>
-                            <input type="text" name="nom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                        
+                        <div>
+                            <label class="form-label">Nom *</label>
+                            <input type="text" name="nom" class="form-input" required>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px;">Section:</label>
-                            <select name="section" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="">Sélectionner</option>
-                                <option value="Rawda">Rawda</option>
-                                <option value="1ère section">1ère section</option>
-                                <option value="2ème section">2ème section</option>
-                                <option value="3ème section">3ème section</option>
-                                <option value="Externe">Externe</option>
-                            </select>
+                        
+                        <div>
+                            <label class="form-label">Téléphone</label>
+                            <input type="tel" name="telephone" class="form-input" placeholder="Ex: +221 77 123 45 67">
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 5px;">Poste:</label>
-                            <input type="text" name="poste" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Ex: Président, Secrétaire...">
+                        
+                        <div>
+                            <label class="form-label">Poste/Fonction</label>
+                            <input type="text" name="poste" class="form-input" placeholder="Ex: Président, Secrétaire, Membre...">
                         </div>
-                        <div style="text-align: right;">
-                            <button type="button" onclick="this.closest('.modal').remove()" style="
-                                background: #6b7280; color: white; padding: 8px 16px; border: none; 
-                                border-radius: 4px; margin-right: 10px; cursor: pointer;
-                            ">Annuler</button>
-                            <button type="submit" style="
-                                background: #3b82f6; color: white; padding: 8px 16px; border: none; 
-                                border-radius: 4px; cursor: pointer;
-                            ">Ajouter</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Email (optionnel)</label>
+                        <input type="email" name="email" class="form-input" placeholder="exemple@email.com">
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">Responsabilités/Notes</label>
+                        <textarea name="responsabilites" class="form-input" rows="3" placeholder="Décrivez les responsabilités ou ajoutez des notes..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="this.closest('.modal').remove()" class="btn-outline">Annuler</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Ajouter le Membre
+                        </button>
+                    </div>
+                </form>
             `;
 
-            const modal = Utils.createModal('Ajouter un Membre', simpleContent, 'lg');
+            const modal = Utils.createModal(`Ajouter un Membre - ${commission.nom}`, formContent, 'lg');
             
             if (modal) {
                 const form = modal.querySelector('#member-form');
@@ -180,13 +182,25 @@ class Commissions {
                         const memberData = {
                             prenom: formData.get('prenom'),
                             nom: formData.get('nom'),
-                            section: formData.get('section'),
-                            poste: formData.get('poste')
+                            telephone: formData.get('telephone'),
+                            poste: formData.get('poste'),
+                            email: formData.get('email'),
+                            responsabilites: formData.get('responsabilites'),
+                            date_ajout: new Date().toISOString().split('T')[0]
                         };
                         
                         if (memberData.prenom && memberData.nom) {
-                            alert(`Membre ajouté: ${memberData.prenom} ${memberData.nom} à ${commission.nom}`);
-                            modal.remove();
+                            // Sauvegarder dans la base de données
+                            try {
+                                window.dataStorage.addCommissionMember(commissionId, memberData);
+                                Utils.showToast(`Membre ${memberData.prenom} ${memberData.nom} ajouté à ${commission.nom}`, 'success');
+                                modal.remove();
+                                // Recharger la page pour afficher le nouveau membre
+                                this.render(document.getElementById('page-content'));
+                            } catch (error) {
+                                console.error('Erreur lors de l\'ajout du membre:', error);
+                                Utils.showToast('Erreur lors de l\'ajout du membre', 'error');
+                            }
                         }
                     });
                 }
