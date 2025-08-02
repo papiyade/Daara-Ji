@@ -11,7 +11,9 @@
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "css:build": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css",
-    "css:watch": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css --watch"
+    "css:watch": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css --watch",
+    "test": "node test-app.js",
+    "clean": "rm -rf dist/ build/ node_modules/.cache"
   },
   "keywords": [
     "daara",
