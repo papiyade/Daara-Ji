@@ -58,9 +58,8 @@ Application desktop de gestion du Daara Re-Creation (02-23 août 2025).
 - **Electron.js** - Framework desktop multiplateforme
 - **HTML5/CSS3/JavaScript** - Interface utilisateur
 - **Tailwind CSS** - Framework CSS moderne et responsive
-- **SQLite** - Base de données locale
+- **LocalStorage** - Stockage local des données (simplifié)
 - **Chart.js** - Graphiques interactifs
-- **Better-SQLite3** - Driver SQLite performant
 - **XLSX** - Export Excel
 - **jsPDF** - Génération PDF
 
@@ -72,29 +71,54 @@ Application desktop de gestion du Daara Re-Creation (02-23 août 2025).
 
 ## 🚀 Installation et Démarrage
 
-### 1. Cloner le repository
+### Option 1 : Installation Automatique (Recommandée)
+
+**Windows :**
 ```bash
 git clone https://github.com/papiyade/Daara-Ji.git
 cd Daara-Ji
+git checkout daara-app-final
+setup.bat
 ```
 
-### 2. Installer les dépendances
+**Linux/macOS :**
 ```bash
+git clone https://github.com/papiyade/Daara-Ji.git
+cd Daara-Ji
+git checkout daara-app-final
+./setup.sh
+```
+
+### Option 2 : Installation Manuelle
+
+```bash
+# 1. Cloner le projet
+git clone https://github.com/papiyade/Daara-Ji.git
+cd Daara-Ji
+git checkout daara-app-final
+
+# 2. Installer les dépendances
 npm install
-```
 
-### 3. Compiler les styles CSS
-```bash
+# 3. Compiler les styles
 npm run css:build
+
+# 4. Lancer l'application
+npm start
 ```
 
-### 4. Démarrer l'application en mode développement
-```bash
-npm run dev
-```
+### 🔧 Dépannage
 
-### 5. Démarrer l'application en mode production
+Si vous rencontrez des erreurs SQLite ou de modules manquants :
+
 ```bash
+# Nettoyage complet
+rm -rf node_modules package-lock.json
+# Windows : rmdir /s node_modules && del package-lock.json
+
+# Réinstallation propre
+npm install
+npm run css:build
 npm start
 ```
 
