@@ -19,8 +19,8 @@ class Presences {
 
     async loadData() {
         try {
-            this.pensionnaires = await window.electronAPI.getPensionnaires();
-            this.presences = await window.electronAPI.getPresences(this.currentDate);
+            this.pensionnaires = window.dataStorage.getAllPensionnaires();
+            this.presences = window.dataStorage.getPresencesByDate(this.currentDate);
         } catch (error) {
             console.error('Erreur lors du chargement des données:', error);
             this.pensionnaires = [];
@@ -214,7 +214,13 @@ class Presences {
             Utils.showLoading();
             
             for (const presence of this.presences) {
-                await window.electronAPI.savePresence(presence);
+                const pensionnaire = this.pensionnaires.find(p => p.id === presence.pensionnaire_id);
+                window.dataStorage.markPresence(
+                    presence.pensionnaire_id, 
+                    this.currentDate, 
+                    presence.statut, 
+                    pensionnaire ? pensionnaire.section : ''
+                );
             }
             
             Utils.showToast('Présences sauvegardées avec succès', 'success');

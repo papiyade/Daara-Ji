@@ -27,13 +27,20 @@ class Dashboard {
 
     async loadStats() {
         try {
-            this.stats = await window.electronAPI.getDashboardStats();
+            // Utiliser le nouveau système de stockage
+            this.stats = window.dataStorage.getGeneralStats();
+            
+            // Ajouter les statistiques de présence du jour
+            const today = new Date().toISOString().split('T')[0];
+            const presencesToday = window.dataStorage.getPresenceStats(today, today);
+            this.stats.presencesToday = presencesToday;
+            
         } catch (error) {
             console.error('Erreur lors du chargement des statistiques:', error);
             this.stats = {
-                totalPensionnaires: 0,
-                parSection: [],
-                parType: [],
+                total_pensionnaires: 0,
+                sections: [],
+                types: [],
                 presencesToday: { presents: 0, absents: 0, total: 0 }
             };
         }
@@ -55,7 +62,7 @@ class Dashboard {
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm font-medium text-gray-500">Total Pensionnaires</p>
-                                <p class="text-2xl font-bold text-gray-900">${this.stats.totalPensionnaires}</p>
+                                <p class="text-2xl font-bold text-gray-900">${this.stats.total_pensionnaires}</p>
                             </div>
                         </div>
                     </div>
@@ -109,7 +116,7 @@ class Dashboard {
                     <div class="card">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-900">Répartition par Section</h3>
-                            <div class="text-sm text-gray-500">Total: ${this.stats.totalPensionnaires}</div>
+                            <div class="text-sm text-gray-500">Total: ${this.stats.total_pensionnaires}</div>
                         </div>
                         <div class="h-64">
                             <canvas id="sectionChart"></canvas>
@@ -210,8 +217,8 @@ class Dashboard {
         const ctx = document.getElementById('sectionChart');
         if (!ctx) return;
 
-        const data = this.stats.parSection.map(item => item.total);
-        const labels = this.stats.parSection.map(item => item.section);
+        const data = this.stats.sections.map(item => item.count);
+        const labels = this.stats.sections.map(item => item.section);
         const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
         this.charts.section = new Chart(ctx, {
@@ -245,8 +252,8 @@ class Dashboard {
         const ctx = document.getElementById('typeChart');
         if (!ctx) return;
 
-        const data = this.stats.parType.map(item => item.total);
-        const labels = this.stats.parType.map(item => item.type_pensionnaire);
+        const data = this.stats.types.map(item => item.count);
+        const labels = this.stats.types.map(item => item.type);
 
         this.charts.type = new Chart(ctx, {
             type: 'pie',
@@ -339,9 +346,9 @@ class Dashboard {
             labels.push(Utils.formatDate(date, 'dd/mm'));
             
             try {
-                const presences = await window.electronAPI.getPresences(dateStr);
-                const presentCount = presences.filter(p => p.statut === 'Présent').length;
-                const absentCount = presences.filter(p => p.statut === 'Absent').length;
+                const presences = window.dataStorage.getPresencesByDate(dateStr);
+                const presentCount = presences.filter(p => p.statut === 'present').length;
+                const absentCount = presences.filter(p => p.statut === 'absent').length;
                 
                 presents.push(presentCount);
                 absents.push(absentCount);
@@ -356,7 +363,7 @@ class Dashboard {
 
     async loadAlerts() {
         try {
-            const alerts = await window.electronAPI.getAlerts();
+            const alerts = window.dataStorage.getUnresolvedAlertes();
             const container = document.getElementById('recent-alerts');
             
             if (alerts.length === 0) {
@@ -457,4 +464,3 @@ class Dashboard {
 
 // Créer une instance globale
 window.Dashboard = new Dashboard();
-

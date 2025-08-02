@@ -17,8 +17,8 @@ class Rapports {
 
     async loadData() {
         try {
-            this.pensionnaires = await window.electronAPI.getPensionnaires();
-            this.commissions = await window.electronAPI.getCommissions();
+            this.pensionnaires = window.dataStorage.getAllPensionnaires();
+            this.commissions = window.dataStorage.getAllCommissions();
         } catch (error) {
             console.error('Erreur lors du chargement des données:', error);
         }

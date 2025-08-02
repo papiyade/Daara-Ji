@@ -26,7 +26,7 @@ class Pensionnaires {
 
     async loadPensionnaires() {
         try {
-            this.pensionnaires = await window.electronAPI.getPensionnaires();
+            this.pensionnaires = window.dataStorage.getAllPensionnaires();
             this.filteredPensionnaires = [...this.pensionnaires];
         } catch (error) {
             console.error('Erreur lors du chargement des pensionnaires:', error);
@@ -394,9 +394,9 @@ class Pensionnaires {
             
             let result;
             if (isEdit) {
-                result = await window.electronAPI.updatePensionnaire(pensionnaireId, pensionnaire);
+                result = window.dataStorage.updatePensionnaire(pensionnaireId, pensionnaire);
             } else {
-                result = await window.electronAPI.addPensionnaire(pensionnaire);
+                result = window.dataStorage.addPensionnaire(pensionnaire);
             }
             
             modal.remove();
@@ -472,7 +472,7 @@ class Pensionnaires {
         if (confirmed) {
             try {
                 Utils.showLoading();
-                await window.electronAPI.deletePensionnaire(id);
+                window.dataStorage.deletePensionnaire(id);
                 await this.loadPensionnaires();
                 this.applyFilters();
                 Utils.showToast('Pensionnaire supprimé avec succès', 'success');

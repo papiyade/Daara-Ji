@@ -16,7 +16,7 @@ class Commissions {
 
     async loadCommissions() {
         try {
-            this.commissions = await window.electronAPI.getCommissions();
+            this.commissions = window.dataStorage.getAllCommissions();
         } catch (error) {
             console.error('Erreur lors du chargement des commissions:', error);
             this.commissions = [];

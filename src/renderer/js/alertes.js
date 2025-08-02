@@ -16,7 +16,7 @@ class Alertes {
 
     async loadAlertes() {
         try {
-            this.alertes = await window.electronAPI.getAlerts();
+            this.alertes = window.dataStorage.getAllAlertes();
         } catch (error) {
             console.error('Erreur lors du chargement des alertes:', error);
             this.alertes = [];
