@@ -485,7 +485,70 @@ class Pensionnaires {
     }
 
     showAddForm() {
-        this.showForm();
+        console.log('showAddForm called');
+        try {
+            // Test simple d'abord
+            if (!Utils.createModal) {
+                console.error('Utils.createModal not available');
+                alert('Erreur: Fonction createModal non disponible');
+                return;
+            }
+
+            // Créer un modal simple pour tester
+            const simpleContent = `
+                <div style="padding: 20px;">
+                    <h4 style="margin-bottom: 15px;">Ajouter un Pensionnaire</h4>
+                    <p>Modal de test - Si vous voyez ceci, les modals fonctionnent !</p>
+                    <form id="simple-form">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Prénom:</label>
+                            <input type="text" name="prenom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Nom:</label>
+                            <input type="text" name="nom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                        </div>
+                        <div style="text-align: right;">
+                            <button type="button" onclick="this.closest('.modal').remove()" style="
+                                background: #6b7280; color: white; padding: 8px 16px; border: none; 
+                                border-radius: 4px; margin-right: 10px; cursor: pointer;
+                            ">Annuler</button>
+                            <button type="submit" style="
+                                background: #3b82f6; color: white; padding: 8px 16px; border: none; 
+                                border-radius: 4px; cursor: pointer;
+                            ">Ajouter</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            const modal = Utils.createModal('Nouveau Pensionnaire', simpleContent, 'lg');
+            
+            if (modal) {
+                console.log('Modal created successfully');
+                // Ajouter l'événement de soumission
+                const form = modal.querySelector('#simple-form');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(form);
+                        const prenom = formData.get('prenom');
+                        const nom = formData.get('nom');
+                        
+                        if (prenom && nom) {
+                            alert(`Pensionnaire ajouté: ${prenom} ${nom}`);
+                            modal.remove();
+                        }
+                    });
+                }
+            } else {
+                console.error('Failed to create modal');
+                alert('Erreur: Impossible de créer le modal');
+            }
+        } catch (error) {
+            console.error('Error in showAddForm:', error);
+            alert('Erreur: ' + error.message);
+        }
     }
 
     editPensionnaire(id) {
@@ -785,4 +848,4 @@ class Pensionnaires {
 }
 
 // Créer une instance globale
-window.Pensionnaires = new Pensionnaires();
+window.pensionnaires = new Pensionnaires();

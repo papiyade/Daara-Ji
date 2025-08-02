@@ -120,7 +120,81 @@ class Commissions {
     }
 
     addMember(commissionId) {
-        this.showMemberForm(commissionId);
+        console.log('addMember called for commission:', commissionId);
+        try {
+            const commission = this.commissions.find(c => c.id === commissionId);
+            if (!commission) {
+                alert('Commission non trouvée');
+                return;
+            }
+
+            const simpleContent = `
+                <div style="padding: 20px;">
+                    <h4 style="margin-bottom: 15px;">Ajouter un Membre - ${commission.nom}</h4>
+                    <form id="member-form">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Prénom:</label>
+                            <input type="text" name="prenom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Nom:</label>
+                            <input type="text" name="nom" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Section:</label>
+                            <select name="section" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="">Sélectionner</option>
+                                <option value="Rawda">Rawda</option>
+                                <option value="1ère section">1ère section</option>
+                                <option value="2ème section">2ème section</option>
+                                <option value="3ème section">3ème section</option>
+                                <option value="Externe">Externe</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px;">Poste:</label>
+                            <input type="text" name="poste" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Ex: Président, Secrétaire...">
+                        </div>
+                        <div style="text-align: right;">
+                            <button type="button" onclick="this.closest('.modal').remove()" style="
+                                background: #6b7280; color: white; padding: 8px 16px; border: none; 
+                                border-radius: 4px; margin-right: 10px; cursor: pointer;
+                            ">Annuler</button>
+                            <button type="submit" style="
+                                background: #3b82f6; color: white; padding: 8px 16px; border: none; 
+                                border-radius: 4px; cursor: pointer;
+                            ">Ajouter</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            const modal = Utils.createModal('Ajouter un Membre', simpleContent, 'lg');
+            
+            if (modal) {
+                const form = modal.querySelector('#member-form');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(form);
+                        const memberData = {
+                            prenom: formData.get('prenom'),
+                            nom: formData.get('nom'),
+                            section: formData.get('section'),
+                            poste: formData.get('poste')
+                        };
+                        
+                        if (memberData.prenom && memberData.nom) {
+                            alert(`Membre ajouté: ${memberData.prenom} ${memberData.nom} à ${commission.nom}`);
+                            modal.remove();
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error in addMember:', error);
+            alert('Erreur: ' + error.message);
+        }
     }
 
     editMember(commissionId, membreId) {
@@ -431,4 +505,4 @@ class Commissions {
 }
 
 // Créer une instance globale
-window.Commissions = new Commissions();
+window.commissions = new Commissions();
