@@ -103,4 +103,4 @@ class Alertes {
 }
 
 // Créer une instance globale
-window.Alertes = new Alertes();
+window.alertes = new Alertes();

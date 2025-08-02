@@ -198,4 +198,4 @@ class Rapports {
 }
 
 // Créer une instance globale
-window.Rapports = new Rapports();
+window.rapports = new Rapports();

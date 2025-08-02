@@ -233,4 +233,4 @@ class Presences {
 }
 
 // Créer une instance globale
-window.Presences = new Presences();
+window.presences = new Presences();

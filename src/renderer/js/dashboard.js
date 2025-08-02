@@ -463,4 +463,4 @@ class Dashboard {
 }
 
 // Créer une instance globale
-window.Dashboard = new Dashboard();
+window.dashboard = new Dashboard();
