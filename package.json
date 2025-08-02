@@ -1,0 +1,59 @@
+{
+  "name": "daara-recreation-manager",
+  "version": "1.0.0",
+  "description": "Application de gestion du Daara Re-Creation (02-23 août 2025)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps",
+    "css:build": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css --watch"
+  },
+  "keywords": ["daara", "gestion", "pensionnaires", "electron", "desktop"],
+  "author": "Daara Re-Creation",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.15",
+    "postcss": "^8.4.29"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0",
+    "xlsx": "^0.18.5",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
+    "chart.js": "^4.4.0",
+    "date-fns": "^2.30.0"
+  },
+  "build": {
+    "appId": "com.daaraji.recreation-manager",
+    "productName": "Daara Re-Creation Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}
