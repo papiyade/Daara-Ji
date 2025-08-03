@@ -729,14 +729,17 @@ class Pensionnaires {
                 'Date inscription': p.date_inscription ? Utils.formatDate(p.date_inscription) : ''
             }));
 
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Pensionnaires");
+            // Utiliser l'API Electron pour exporter
+            const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const result = await window.electronAPI.exportExcel(data, fileName);
             
-            const filename = `pensionnaires_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, filename);
-            
-            Utils.showToast('Export Excel réussi', 'success');
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export Excel');
         } finally {
@@ -748,44 +751,91 @@ class Pensionnaires {
         try {
             Utils.showLoading();
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintablePensionnaires();
             
-            // Titre
-            doc.setFontSize(16);
-            doc.text('Liste des Pensionnaires - Daara Re-Creation', 20, 20);
-            doc.setFontSize(10);
-            doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 20, 30);
+            // Utiliser l'API Electron pour exporter
+            const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
             
-            // Préparer les données pour le tableau
-            const headers = [['Prénom', 'Nom', 'Section', 'Type', 'Téléphone', 'Date inscription']];
-            const data = this.filteredPensionnaires.map(p => [
-                p.prenom,
-                p.nom,
-                p.section,
-                p.type_pensionnaire,
-                p.tel_pere || p.tel_mere || '',
-                p.date_inscription ? Utils.formatDate(p.date_inscription) : ''
-            ]);
-            
-            // Créer le tableau
-            doc.autoTable({
-                head: headers,
-                body: data,
-                startY: 40,
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [41, 128, 185] }
-            });
-            
-            const filename = `pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(filename);
-            
-            Utils.showToast('Export PDF réussi', 'success');
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');
         } finally {
             Utils.hideLoading();
         }
+    }
+    
+    generatePrintablePensionnaires() {
+        const today = Utils.formatDate(new Date());
+        
+        let pensionnairesHTML = '';
+        this.filteredPensionnaires.forEach((p, index) => {
+            pensionnairesHTML += `
+                <tr class="${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                    <td class="border px-4 py-2">${p.prenom}</td>
+                    <td class="border px-4 py-2">${p.nom}</td>
+                    <td class="border px-4 py-2">${p.section}</td>
+                    <td class="border px-4 py-2">${p.type_pensionnaire}</td>
+                    <td class="border px-4 py-2">${p.tel_pere || p.tel_mere || ''}</td>
+                    <td class="border px-4 py-2">${p.date_inscription ? Utils.formatDate(p.date_inscription) : ''}</td>
+                </tr>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Liste des Pensionnaires - Daara Re-Creation</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                    th { background-color: #f5f5f5; font-weight: bold; }
+                    .bg-gray-50 { background-color: #f9f9f9; }
+                    .bg-white { background-color: white; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>LISTE DES PENSIONNAIRES</h1>
+                    <h2>DAARA RE-CREATION</h2>
+                    <p>02 au 23 août 2025</p>
+                    <p>Rapport généré le ${today}</p>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Section</th>
+                            <th>Type</th>
+                            <th>Téléphone</th>
+                            <th>Date inscription</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pensionnairesHTML}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
+                    Total: ${this.filteredPensionnaires.length} pensionnaires
+                </div>
+            </body>
+            </html>
+        `;
     }
 }
 

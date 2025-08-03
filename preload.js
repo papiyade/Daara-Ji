@@ -21,5 +21,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Dialogs
   showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
-  showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options)
+  showMessageBox: (options) => ipcRenderer.invoke('show-message-box', options),
+  
+  // File operations
+  saveFile: (filePath, content) => ipcRenderer.invoke('save-file', filePath, content),
+  exportExcel: (data, fileName) => ipcRenderer.invoke('export-excel', data, fileName),
+  exportPDF: (htmlContent, fileName) => ipcRenderer.invoke('export-pdf', htmlContent, fileName)
 });

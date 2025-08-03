@@ -452,14 +452,17 @@ class Commissions {
                 'Notes': m.notes || ''
             }));
 
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, commission.acronyme);
+            // Utiliser l'API Electron pour exporter
+            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const result = await window.electronAPI.exportExcel(data, fileName);
             
-            const filename = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, filename);
-            
-            Utils.showToast('Export Excel réussi', 'success');
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export Excel');
         } finally {
@@ -474,47 +477,100 @@ class Commissions {
             const commission = this.commissions.find(c => c.id === commissionId);
             if (!commission) return;
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintableCommission(commission);
             
-            // Titre
-            doc.setFontSize(16);
-            doc.text(`${commission.nom} (${commission.acronyme})`, 20, 20);
-            doc.setFontSize(10);
-            doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 20, 30);
+            // Utiliser l'API Electron pour exporter
+            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
             
-            if (commission.description) {
-                doc.text(commission.description, 20, 40);
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
-            
-            // Préparer les données pour le tableau
-            const headers = [['Prénom', 'Nom', 'Section', 'Poste', 'Téléphone']];
-            const data = commission.membres.map(m => [
-                m.prenom,
-                m.nom,
-                m.section || '',
-                m.poste || '',
-                m.telephone || ''
-            ]);
-            
-            // Créer le tableau
-            doc.autoTable({
-                head: headers,
-                body: data,
-                startY: commission.description ? 50 : 40,
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [41, 128, 185] }
-            });
-            
-            const filename = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(filename);
-            
-            Utils.showToast('Export PDF réussi', 'success');
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');
         } finally {
             Utils.hideLoading();
         }
+    }
+    
+    generatePrintableCommission(commission) {
+        const today = Utils.formatDate(new Date());
+        
+        let membresHTML = '';
+        commission.membres.forEach((m, index) => {
+            membresHTML += `
+                <tr class="${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}">
+                    <td class="border px-4 py-2">${m.prenom}</td>
+                    <td class="border px-4 py-2">${m.nom}</td>
+                    <td class="border px-4 py-2">${m.section || ''}</td>
+                    <td class="border px-4 py-2">${m.poste || ''}</td>
+                    <td class="border px-4 py-2">${m.telephone || ''}</td>
+                    <td class="border px-4 py-2">${m.email || ''}</td>
+                </tr>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${commission.nom} - Daara Re-Creation</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    .description { margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-left: 4px solid #333; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                    th { background-color: #f5f5f5; font-weight: bold; }
+                    .bg-gray-50 { background-color: #f9f9f9; }
+                    .bg-white { background-color: white; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${commission.nom}</h1>
+                    <h2>(${commission.acronyme})</h2>
+                    <p>DAARA RE-CREATION - 02 au 23 août 2025</p>
+                    <p>Rapport généré le ${today}</p>
+                </div>
+                
+                ${commission.description ? `
+                    <div class="description">
+                        <h3>Description</h3>
+                        <p>${commission.description}</p>
+                    </div>
+                ` : ''}
+                
+                <h3>Membres de la Commission</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Section</th>
+                            <th>Poste</th>
+                            <th>Téléphone</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${membresHTML}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
+                    Total: ${commission.membres.length} membres
+                </div>
+            </body>
+            </html>
+        `;
     }
 }
 

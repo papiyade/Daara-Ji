@@ -186,16 +186,17 @@ class Rapports {
                 'Participation': p.participation || ''
             }));
 
-            // Créer le fichier Excel
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Pensionnaires');
-
-            // Télécharger le fichier
+            // Utiliser l'API Electron pour exporter
             const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-
-            Utils.showToast('Export Excel des pensionnaires terminé', 'success');
+            const result = await window.electronAPI.exportExcel(data, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             console.error('Erreur lors de l\'export Excel:', error);
             Utils.showToast('Erreur lors de l\'export Excel', 'error');
@@ -208,34 +209,19 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
-            const result = await window.electronAPI.showSaveDialog({
-                title: 'Sauvegarder la liste des pensionnaires',
-                defaultPath: `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
-                filters: [
-                    { name: 'PDF Files', extensions: ['pdf'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
-            });
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintablePensionnaires();
             
-            if (!result.canceled && result.filePath) {
-                // Générer le HTML pour l'impression
-                const printHTML = this.generatePrintablePensionnaires();
-                
-                // Créer une nouvelle fenêtre pour l'impression
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                // Attendre que le contenu soit chargé puis imprimer
-                printWindow.onload = function() {
-                    printWindow.print();
-                    // Ne pas fermer automatiquement pour permettre à l'utilisateur de sauvegarder
-                };
-                
-                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            // Utiliser l'API Electron pour exporter
+            const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
             } else {
-                Utils.showToast('Sauvegarde annulée', 'info');
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
             
             Utils.hideLoading();
@@ -466,28 +452,17 @@ class Rapports {
                 };
             });
 
-            // Créer le fichier Excel
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Présences');
-
-            // Ajouter une feuille de statistiques
-            const stats = this.calculatePresenceStats(presences);
-            const statsData = [
-                { 'Statistique': 'Total présences', 'Valeur': stats.totalPresences },
-                { 'Statistique': 'Présents', 'Valeur': stats.presents },
-                { 'Statistique': 'Absents', 'Valeur': stats.absents },
-                { 'Statistique': 'Excusés', 'Valeur': stats.excuses },
-                { 'Statistique': 'Taux de présence', 'Valeur': `${stats.tauxPresence}%` }
-            ];
-            const wsStats = XLSX.utils.json_to_sheet(statsData);
-            XLSX.utils.book_append_sheet(wb, wsStats, 'Statistiques');
-
-            // Télécharger le fichier
+            // Utiliser l'API Electron pour exporter
             const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-
-            Utils.showToast('Export Excel des présences terminé', 'success');
+            const result = await window.electronAPI.exportExcel(data, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             console.error('Erreur lors de l\'export Excel:', error);
             Utils.showToast('Erreur lors de l\'export Excel', 'error');
@@ -510,117 +485,136 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintablePresences();
             
-            // Configuration
-            const pageWidth = doc.internal.pageSize.width;
-            const margin = 20;
-            let yPosition = 30;
-            
-            // Titre
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text('RAPPORT DE PRÉSENCES - DAARA RE-CREATION', pageWidth / 2, yPosition, { align: 'center' });
-            
-            yPosition += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Généré le ${Utils.formatDate(new Date())}`, pageWidth / 2, yPosition, { align: 'center' });
-            
-            yPosition += 20;
-            
-            // Obtenir les données de présences pour les 7 derniers jours
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 7);
-            
-            const presences = window.dataStorage.getPresencesByDateRange(
-                startDate.toISOString().split('T')[0],
-                endDate.toISOString().split('T')[0]
-            );
-            
-            // Statistiques générales
-            const stats = this.calculatePresenceStats(presences);
-            
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text('STATISTIQUES (7 derniers jours)', margin, yPosition);
-            yPosition += 10;
-            
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Total des enregistrements: ${stats.totalPresences}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Présents: ${stats.presents}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Absents: ${stats.absents}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Excusés: ${stats.excuses}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Taux de présence: ${stats.tauxPresence}%`, margin, yPosition);
-            yPosition += 15;
-            
-            // Grouper par date
-            const presencesByDate = {};
-            presences.forEach(p => {
-                if (!presencesByDate[p.date_presence]) {
-                    presencesByDate[p.date_presence] = [];
-                }
-                presencesByDate[p.date_presence].push(p);
-            });
-            
-            // Afficher par date
-            Object.keys(presencesByDate).sort().forEach(date => {
-                if (yPosition > 250) {
-                    doc.addPage();
-                    yPosition = 30;
-                }
-                
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                doc.text(`${Utils.formatDate(new Date(date))}`, margin, yPosition);
-                yPosition += 8;
-                
-                const dayPresences = presencesByDate[date];
-                const dayStats = this.calculatePresenceStats(dayPresences);
-                
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'normal');
-                doc.text(`Présents: ${dayStats.presents} | Absents: ${dayStats.absents} | Excusés: ${dayStats.excuses}`, margin + 5, yPosition);
-                yPosition += 8;
-                
-                // Lister les absents du jour
-                const absentsJour = dayPresences.filter(p => p.statut === 'Absent');
-                if (absentsJour.length > 0) {
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Absents:', margin + 5, yPosition);
-                    yPosition += 5;
-                    
-                    doc.setFont(undefined, 'normal');
-                    absentsJour.forEach(p => {
-                        const pensionnaire = this.pensionnaires.find(pen => pen.id === p.pensionnaire_id);
-                        if (pensionnaire) {
-                            doc.text(`• ${pensionnaire.prenom} ${pensionnaire.nom} (${pensionnaire.section})`, margin + 10, yPosition);
-                            yPosition += 4;
-                        }
-                    });
-                }
-                
-                yPosition += 5;
-            });
-            
-            // Sauvegarder
+            // Utiliser l'API Electron pour exporter
             const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(fileName);
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
             
-            Utils.showToast('Export PDF des présences terminé', 'success');
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             console.error('Erreur lors de l\'export PDF:', error);
             Utils.showToast('Erreur lors de l\'export PDF', 'error');
         } finally {
             Utils.hideLoading();
         }
+    }
+    
+    generatePrintablePresences() {
+        const today = Utils.formatDate(new Date());
+        
+        // Obtenir les données de présences pour les 7 derniers jours
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
+        
+        const presences = window.dataStorage.getPresencesByDateRange(
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+        );
+        
+        // Statistiques générales
+        const stats = this.calculatePresenceStats(presences);
+        
+        // Grouper par date
+        const presencesByDate = {};
+        presences.forEach(p => {
+            if (!presencesByDate[p.date_presence]) {
+                presencesByDate[p.date_presence] = [];
+            }
+            presencesByDate[p.date_presence].push(p);
+        });
+        
+        let datesHTML = '';
+        Object.keys(presencesByDate).sort().forEach(date => {
+            const dayPresences = presencesByDate[date];
+            const dayStats = this.calculatePresenceStats(dayPresences);
+            
+            // Lister les absents du jour
+            const absentsJour = dayPresences.filter(p => p.statut === 'Absent');
+            let absentsHTML = '';
+            
+            if (absentsJour.length > 0) {
+                absentsJour.forEach(p => {
+                    const pensionnaire = this.pensionnaires.find(pen => pen.id === p.pensionnaire_id);
+                    if (pensionnaire) {
+                        absentsHTML += `<li>${pensionnaire.prenom} ${pensionnaire.nom} (${pensionnaire.section})</li>`;
+                    }
+                });
+            }
+            
+            datesHTML += `
+                <div class="date-section">
+                    <h3>${Utils.formatDate(new Date(date))}</h3>
+                    <div class="day-stats">
+                        <span class="stat">Présents: ${dayStats.presents}</span>
+                        <span class="stat">Absents: ${dayStats.absents}</span>
+                        <span class="stat">Excusés: ${dayStats.excuses}</span>
+                    </div>
+                    ${absentsHTML ? `
+                        <div class="absents-section">
+                            <h4>Absents du jour:</h4>
+                            <ul>${absentsHTML}</ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Rapport de Présences - Daara Re-Creation</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    .stats-summary { background-color: #f5f5f5; padding: 20px; margin-bottom: 30px; border-radius: 5px; }
+                    .stats-summary h3 { margin-top: 0; }
+                    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+                    .date-section { margin-bottom: 25px; page-break-inside: avoid; }
+                    .date-section h3 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                    .day-stats { margin: 10px 0; }
+                    .stat { display: inline-block; margin-right: 20px; padding: 5px 10px; background-color: #e9ecef; border-radius: 3px; }
+                    .absents-section { margin-top: 15px; }
+                    .absents-section h4 { color: #dc3545; margin-bottom: 10px; }
+                    .absents-section ul { margin: 0; padding-left: 20px; }
+                    .absents-section li { margin-bottom: 5px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>RAPPORT DE PRÉSENCES</h1>
+                    <h2>DAARA RE-CREATION</h2>
+                    <p>02 au 23 août 2025</p>
+                    <p>Rapport généré le ${today}</p>
+                </div>
+                
+                <div class="stats-summary">
+                    <h3>Statistiques (7 derniers jours)</h3>
+                    <div class="stats-grid">
+                        <div><strong>Total enregistrements:</strong> ${stats.totalPresences}</div>
+                        <div><strong>Présents:</strong> ${stats.presents}</div>
+                        <div><strong>Absents:</strong> ${stats.absents}</div>
+                        <div><strong>Excusés:</strong> ${stats.excuses}</div>
+                        <div><strong>Taux de présence:</strong> ${stats.tauxPresence}%</div>
+                    </div>
+                </div>
+                
+                <h3>Détail par jour</h3>
+                ${datesHTML}
+            </body>
+            </html>
+        `;
     }
 
     async exportCommissionsExcel() {
@@ -661,16 +655,17 @@ class Rapports {
                 }
             });
 
-            // Créer le fichier Excel
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Commissions');
-
-            // Télécharger le fichier
+            // Utiliser l'API Electron pour exporter
             const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, fileName);
-
-            Utils.showToast('Export Excel des commissions terminé', 'success');
+            const result = await window.electronAPI.exportExcel(data, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
         } catch (error) {
             console.error('Erreur lors de l\'export Excel:', error);
             Utils.showToast('Erreur lors de l\'export Excel', 'error');
@@ -683,33 +678,19 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
-            const result = await window.electronAPI.showSaveDialog({
-                title: 'Sauvegarder la liste des commissions',
-                defaultPath: `Commissions_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
-                filters: [
-                    { name: 'PDF Files', extensions: ['pdf'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
-            });
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintableCommissions();
             
-            if (!result.canceled && result.filePath) {
-                // Générer le HTML pour l'impression
-                const printHTML = this.generatePrintableCommissions();
-                
-                // Créer une nouvelle fenêtre pour l'impression
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                // Attendre que le contenu soit chargé puis imprimer
-                printWindow.onload = function() {
-                    printWindow.print();
-                };
-                
-                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            // Utiliser l'API Electron pour exporter
+            const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
             } else {
-                Utils.showToast('Sauvegarde annulée', 'info');
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
             
             Utils.hideLoading();
@@ -933,40 +914,105 @@ class Rapports {
     }
 
     async exportStatistiquesExcel() {
-        Utils.showToast('Export Excel des statistiques en cours de développement', 'info');
+        try {
+            Utils.showLoading();
+            
+            const totalPensionnaires = this.pensionnaires.length;
+            const sections = ['Rawda', '1ère section', '2ème section', '3ème section'];
+            
+            // Préparer les données statistiques
+            const data = [];
+            
+            // Statistiques générales
+            data.push({
+                'Type': 'Général',
+                'Catégorie': 'Total pensionnaires',
+                'Valeur': totalPensionnaires,
+                'Détails': ''
+            });
+            
+            data.push({
+                'Type': 'Général',
+                'Catégorie': 'Membres',
+                'Valeur': this.pensionnaires.filter(p => p.type_pensionnaire === 'Membre').length,
+                'Détails': ''
+            });
+            
+            data.push({
+                'Type': 'Général',
+                'Catégorie': 'Sympathisants',
+                'Valeur': this.pensionnaires.filter(p => p.type_pensionnaire === 'Sympathisant').length,
+                'Détails': ''
+            });
+            
+            // Statistiques par section
+            sections.forEach(section => {
+                const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
+                const membres = pensionnairesSection.filter(p => p.type_pensionnaire === 'Membre').length;
+                const sympathisants = pensionnairesSection.filter(p => p.type_pensionnaire === 'Sympathisant').length;
+                
+                data.push({
+                    'Type': 'Section',
+                    'Catégorie': section,
+                    'Valeur': pensionnairesSection.length,
+                    'Détails': `Membres: ${membres}, Sympathisants: ${sympathisants}`
+                });
+            });
+            
+            // Statistiques des commissions
+            data.push({
+                'Type': 'Commissions',
+                'Catégorie': 'Nombre total',
+                'Valeur': this.commissions.length,
+                'Détails': ''
+            });
+            
+            this.commissions.forEach(commission => {
+                const nombreMembres = commission.membres ? commission.membres.length : 0;
+                data.push({
+                    'Type': 'Commission',
+                    'Catégorie': commission.nom,
+                    'Valeur': nombreMembres,
+                    'Détails': commission.description || ''
+                });
+            });
+            
+            // Utiliser l'API Electron pour exporter
+            const fileName = `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
+            const result = await window.electronAPI.exportExcel(data, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
+            } else {
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'export Excel:', error);
+            Utils.showToast('Erreur lors de l\'export Excel', 'error');
+        } finally {
+            Utils.hideLoading();
+        }
     }
 
     async exportStatistiquesPDF() {
         try {
             Utils.showLoading();
             
-            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
-            const result = await window.electronAPI.showSaveDialog({
-                title: 'Sauvegarder les statistiques',
-                defaultPath: `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
-                filters: [
-                    { name: 'PDF Files', extensions: ['pdf'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
-            });
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintableStatistiques();
             
-            if (!result.canceled && result.filePath) {
-                // Générer le HTML pour l'impression
-                const printHTML = this.generatePrintableStatistiques();
-                
-                // Créer une nouvelle fenêtre pour l'impression
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                // Attendre que le contenu soit chargé puis imprimer
-                printWindow.onload = function() {
-                    printWindow.print();
-                };
-                
-                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            // Utiliser l'API Electron pour exporter
+            const fileName = `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
             } else {
-                Utils.showToast('Sauvegarde annulée', 'info');
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
             
             Utils.hideLoading();
@@ -1036,30 +1082,19 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            const result = await window.electronAPI.showSaveDialog({
-                title: 'Sauvegarder les fiches individuelles',
-                defaultPath: `Fiches_Pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`,
-                filters: [
-                    { name: 'PDF Files', extensions: ['pdf'] },
-                    { name: 'All Files', extensions: ['*'] }
-                ]
-            });
+            const selectedPensionnaires = this.pensionnaires.filter(p => selectedIds.includes(p.id));
+            const printHTML = this.generatePrintableFiches(selectedPensionnaires);
             
-            if (!result.canceled && result.filePath) {
-                const selectedPensionnaires = this.pensionnaires.filter(p => selectedIds.includes(p.id));
-                const printHTML = this.generatePrintableFiches(selectedPensionnaires);
-                
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                printWindow.onload = function() {
-                    printWindow.print();
-                };
-                
-                Utils.showToast(`Fiches préparées pour sauvegarde vers: ${result.filePath}`, 'success');
+            // Utiliser l'API Electron pour exporter
+            const fileName = `Fiches_Pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
+            const result = await window.electronAPI.exportPDF(printHTML, fileName);
+            
+            if (result.success && !result.canceled) {
+                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+            } else if (result.canceled) {
+                Utils.showToast('Export annulé', 'info');
             } else {
-                Utils.showToast('Sauvegarde annulée', 'info');
+                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
             
             Utils.hideLoading();
