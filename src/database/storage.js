@@ -21,8 +21,9 @@ class DataStorage {
      * Initialise les données par défaut si elles n'existent pas
      */
     initializeDefaultData() {
-        // Créer les commissions par défaut si elles n'existent pas
-        if (!this.getItem(this.storageKeys.commissions)) {
+        try {
+            // Créer les commissions par défaut si elles n'existent pas
+            if (!this.getItem(this.storageKeys.commissions)) {
             const defaultCommissions = [
                 {
                     id: 1,
@@ -78,12 +79,37 @@ class DataStorage {
         if (!this.getItem(this.storageKeys.alertes)) {
             this.setItem(this.storageKeys.alertes, []);
         }
-        if (!this.getItem(this.storageKeys.settings)) {
-            this.setItem(this.storageKeys.settings, {
-                initialized: true,
-                version: '1.0.0',
-                created_at: new Date().toISOString()
-            });
+            if (!this.getItem(this.storageKeys.settings)) {
+                this.setItem(this.storageKeys.settings, {
+                    initialized: true,
+                    version: '1.0.0',
+                    created_at: new Date().toISOString()
+                });
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation des données par défaut:', error);
+            // Essayer de récupérer en mode dégradé
+            this.initializeFallbackData();
+        }
+    }
+    
+    /**
+     * Initialisation en mode dégradé si localStorage échoue
+     */
+    initializeFallbackData() {
+        try {
+            // Vérifier si localStorage est disponible
+            if (typeof Storage !== "undefined") {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+            } else {
+                console.warn('LocalStorage non disponible, utilisation de la mémoire temporaire');
+                // Utiliser un objet en mémoire comme fallback
+                this.memoryStorage = {};
+            }
+        } catch (error) {
+            console.warn('LocalStorage non accessible, utilisation de la mémoire temporaire');
+            this.memoryStorage = {};
         }
     }
 
@@ -92,6 +118,9 @@ class DataStorage {
      */
     getItem(key) {
         try {
+            if (this.memoryStorage) {
+                return this.memoryStorage[key] || null;
+            }
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : null;
         } catch (error) {
@@ -105,6 +134,10 @@ class DataStorage {
      */
     setItem(key, value) {
         try {
+            if (this.memoryStorage) {
+                this.memoryStorage[key] = value;
+                return true;
+            }
             localStorage.setItem(key, JSON.stringify(value));
             return true;
         } catch (error) {

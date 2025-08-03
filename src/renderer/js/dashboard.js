@@ -47,17 +47,25 @@ class Dashboard {
             const today = new Date().toISOString().split('T')[0];
             const presencesToday = window.dataStorage.getPresencesByDate(today);
             
+            const presents = presencesToday.filter(p => p.statut === 'Présent').length;
+            const absents = presencesToday.filter(p => p.statut === 'Absent').length;
+            const excuses = presencesToday.filter(p => p.statut === 'Excusé').length;
+            
+            // Les absents = total pensionnaires - présents - excusés
+            const totalPensionnaires = pensionnaires.length;
+            const realAbsents = totalPensionnaires - presents - excuses;
+            
             this.stats.presencesToday = {
-                presents: presencesToday.filter(p => p.statut === 'Présent').length,
-                absents: presencesToday.filter(p => p.statut === 'Absent').length,
-                excuses: presencesToday.filter(p => p.statut === 'Excusé').length,
-                total: presencesToday.length
+                presents: presents,
+                absents: Math.max(0, realAbsents), // S'assurer que ce n'est pas négatif
+                excuses: excuses,
+                total: totalPensionnaires
             };
             
             // Calculer le taux de présence
-            if (this.stats.presencesToday.total > 0) {
+            if (totalPensionnaires > 0) {
                 this.stats.presencesToday.tauxPresence = Math.round(
-                    (this.stats.presencesToday.presents / this.stats.presencesToday.total) * 100
+                    (presents / totalPensionnaires) * 100
                 );
             } else {
                 this.stats.presencesToday.tauxPresence = 0;
@@ -376,8 +384,11 @@ class Dashboard {
             
             try {
                 const presences = window.dataStorage.getPresencesByDate(dateStr);
-                const presentCount = presences.filter(p => p.statut === 'present').length;
-                const absentCount = presences.filter(p => p.statut === 'absent').length;
+                const totalPensionnaires = window.dataStorage.getAllPensionnaires().length;
+                
+                const presentCount = presences.filter(p => p.statut === 'Présent').length;
+                const excusedCount = presences.filter(p => p.statut === 'Excusé').length;
+                const absentCount = Math.max(0, totalPensionnaires - presentCount - excusedCount);
                 
                 presents.push(presentCount);
                 absents.push(absentCount);

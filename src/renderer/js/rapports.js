@@ -208,6 +208,47 @@ class Rapports {
         try {
             Utils.showLoading();
             
+            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
+            const result = await window.electronAPI.showSaveDialog({
+                title: 'Sauvegarder la liste des pensionnaires',
+                defaultPath: `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
+                filters: [
+                    { name: 'PDF Files', extensions: ['pdf'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                // Générer le HTML pour l'impression
+                const printHTML = this.generatePrintablePensionnaires();
+                
+                // Créer une nouvelle fenêtre pour l'impression
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                
+                // Attendre que le contenu soit chargé puis imprimer
+                printWindow.onload = function() {
+                    printWindow.print();
+                    // Ne pas fermer automatiquement pour permettre à l'utilisateur de sauvegarder
+                };
+                
+                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            } else {
+                Utils.showToast('Sauvegarde annulée', 'info');
+            }
+            
+            Utils.hideLoading();
+            
+        } catch (error) {
+            Utils.hideLoading();
+            // Fallback vers l'impression normale si l'API Electron n'est pas disponible
+            this.fallbackPrintPensionnaires();
+        }
+    }
+    
+    fallbackPrintPensionnaires() {
+        try {
             // Créer une nouvelle fenêtre pour l'impression
             const printWindow = window.open('', '_blank');
             
@@ -220,14 +261,11 @@ class Rapports {
             // Attendre que le contenu soit chargé puis imprimer
             printWindow.onload = function() {
                 printWindow.print();
-                printWindow.close();
             };
             
-            Utils.hideLoading();
             Utils.showToast('Document préparé pour impression', 'success');
             
         } catch (error) {
-            Utils.hideLoading();
             Utils.handleError(error, 'lors de la préparation de l\'impression');
         }
     }
@@ -645,6 +683,46 @@ class Rapports {
         try {
             Utils.showLoading();
             
+            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
+            const result = await window.electronAPI.showSaveDialog({
+                title: 'Sauvegarder la liste des commissions',
+                defaultPath: `Commissions_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
+                filters: [
+                    { name: 'PDF Files', extensions: ['pdf'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                // Générer le HTML pour l'impression
+                const printHTML = this.generatePrintableCommissions();
+                
+                // Créer une nouvelle fenêtre pour l'impression
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                
+                // Attendre que le contenu soit chargé puis imprimer
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
+                
+                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            } else {
+                Utils.showToast('Sauvegarde annulée', 'info');
+            }
+            
+            Utils.hideLoading();
+            
+        } catch (error) {
+            Utils.hideLoading();
+            // Fallback vers l'impression normale si l'API Electron n'est pas disponible
+            this.fallbackPrintCommissions();
+        }
+    }
+    
+    fallbackPrintCommissions() {
+        try {
             // Créer une nouvelle fenêtre pour l'impression
             const printWindow = window.open('', '_blank');
             
@@ -657,14 +735,11 @@ class Rapports {
             // Attendre que le contenu soit chargé puis imprimer
             printWindow.onload = function() {
                 printWindow.print();
-                printWindow.close();
             };
             
-            Utils.hideLoading();
             Utils.showToast('Document préparé pour impression', 'success');
             
         } catch (error) {
-            Utils.hideLoading();
             Utils.handleError(error, 'lors de la préparation de l\'impression');
         }
     }
@@ -862,15 +937,437 @@ class Rapports {
     }
 
     async exportStatistiquesPDF() {
-        Utils.showToast('Export PDF des statistiques en cours de développement', 'info');
+        try {
+            Utils.showLoading();
+            
+            // Utiliser l'API Electron pour ouvrir un dialogue de sauvegarde
+            const result = await window.electronAPI.showSaveDialog({
+                title: 'Sauvegarder les statistiques',
+                defaultPath: `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.pdf`,
+                filters: [
+                    { name: 'PDF Files', extensions: ['pdf'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                // Générer le HTML pour l'impression
+                const printHTML = this.generatePrintableStatistiques();
+                
+                // Créer une nouvelle fenêtre pour l'impression
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                
+                // Attendre que le contenu soit chargé puis imprimer
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
+                
+                Utils.showToast(`Document préparé pour sauvegarde vers: ${result.filePath}`, 'success');
+            } else {
+                Utils.showToast('Sauvegarde annulée', 'info');
+            }
+            
+            Utils.hideLoading();
+            
+        } catch (error) {
+            Utils.hideLoading();
+            this.fallbackPrintStatistiques();
+        }
     }
 
     showFichesOptions() {
-        Utils.showToast('Génération de fiches individuelles en cours de développement', 'info');
+        // Créer un modal pour sélectionner les pensionnaires
+        const modalHTML = `
+            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="fichesModal">
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+                    <h3 class="text-lg font-semibold mb-4">Sélectionner les pensionnaires</h3>
+                    <div class="space-y-2 mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="selectAll" class="mr-2">
+                            <span class="font-medium">Sélectionner tout</span>
+                        </label>
+                    </div>
+                    <div class="space-y-2 max-h-48 overflow-y-auto" id="pensionnairesList">
+                        ${this.pensionnaires.map(p => `
+                            <label class="flex items-center">
+                                <input type="checkbox" name="pensionnaire" value="${p.id}" class="mr-2">
+                                <span>${p.prenom} ${p.nom} (${p.section})</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-4">
+                        <button onclick="document.getElementById('fichesModal').remove()" class="btn-outline">
+                            Annuler
+                        </button>
+                        <button onclick="rapports.generateSelectedFiches()" class="btn-primary">
+                            Générer PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Gérer la sélection "tout"
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('input[name="pensionnaire"]');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
     }
 
     showCustomReportOptions() {
         Utils.showToast('Rapports personnalisés en cours de développement', 'info');
+    }
+    
+    async generateSelectedFiches() {
+        const selectedIds = Array.from(document.querySelectorAll('input[name="pensionnaire"]:checked'))
+            .map(cb => parseInt(cb.value));
+        
+        if (selectedIds.length === 0) {
+            Utils.showToast('Veuillez sélectionner au moins un pensionnaire', 'warning');
+            return;
+        }
+        
+        document.getElementById('fichesModal').remove();
+        
+        try {
+            Utils.showLoading();
+            
+            const result = await window.electronAPI.showSaveDialog({
+                title: 'Sauvegarder les fiches individuelles',
+                defaultPath: `Fiches_Pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`,
+                filters: [
+                    { name: 'PDF Files', extensions: ['pdf'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+            
+            if (!result.canceled && result.filePath) {
+                const selectedPensionnaires = this.pensionnaires.filter(p => selectedIds.includes(p.id));
+                const printHTML = this.generatePrintableFiches(selectedPensionnaires);
+                
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
+                
+                Utils.showToast(`Fiches préparées pour sauvegarde vers: ${result.filePath}`, 'success');
+            } else {
+                Utils.showToast('Sauvegarde annulée', 'info');
+            }
+            
+            Utils.hideLoading();
+            
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.handleError(error, 'lors de la génération des fiches');
+        }
+    }
+    
+    generatePrintableFiches(pensionnaires) {
+        const today = Utils.formatDate(new Date());
+        
+        let fichesHTML = '';
+        
+        pensionnaires.forEach((p, index) => {
+            if (index > 0) fichesHTML += '<div class="page-break"></div>';
+            
+            fichesHTML += `
+                <div class="fiche-container">
+                    <div class="fiche-header">
+                        <h2>FICHE D'INSCRIPTION</h2>
+                        <h3>DAARA RE-CREATION</h3>
+                        <p>02 au 23 août 2025</p>
+                    </div>
+                    
+                    <div class="fiche-content">
+                        <div class="info-row">
+                            <span class="label">Prénoms & Nom :</span>
+                            <span class="value">${p.prenom} ${p.nom}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Date et lieu de naissance :</span>
+                            <span class="value">${p.date_naissance || ''} - ${p.lieu_naissance || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Adresse :</span>
+                            <span class="value">${p.adresse || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Section de base :</span>
+                            <span class="value">${p.section || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Type de pensionnaire :</span>
+                            <span class="value">${p.type_pensionnaire || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Prénom du Père :</span>
+                            <span class="value">${p.prenom_pere || ''}</span>
+                            <span class="label">Tél :</span>
+                            <span class="value">${p.tel_pere || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Prénom & Nom de la Mère :</span>
+                            <span class="value">${p.prenom_mere || ''} ${p.nom_mere || ''}</span>
+                            <span class="label">Tél :</span>
+                            <span class="value">${p.tel_mere || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Encadreur :</span>
+                            <span class="value">${p.encadreur || ''}</span>
+                            <span class="label">Tél :</span>
+                            <span class="value">${p.tel_encadreur || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Le pensionnaire est-il scolarisé ?</span>
+                            <span class="value">${p.scolarise || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Si OUI en Arabe ou bien en Français ?</span>
+                            <span class="value">${p.langue_enseignement || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Niveau d'études :</span>
+                            <span class="value">${p.niveau_etudes || ''}</span>
+                            <span class="label">École Fréquentée :</span>
+                            <span class="value">${p.ecole_frequentee || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Le pensionnaire souffre-t-il d'une maladie ?</span>
+                            <span class="value">${p.maladie || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Si OUI laquelle ?</span>
+                            <span class="value">${p.type_maladie || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Suit-il un traitement ?</span>
+                            <span class="value">${p.traitement || ''}</span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Participation du pensionnaire (somme) :</span>
+                            <span class="value">${p.participation || ''}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Fiches d'Inscription - Daara Re-Creation</title>
+                <style>
+                    @page { 
+                        size: A4; 
+                        margin: 20mm; 
+                    }
+                    
+                    body {
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                        line-height: 1.4;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    
+                    .page-break {
+                        page-break-before: always;
+                    }
+                    
+                    .fiche-container {
+                        width: 100%;
+                        border: 2px solid #333;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .fiche-header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 1px solid #333;
+                        padding-bottom: 15px;
+                    }
+                    
+                    .fiche-header h2 {
+                        margin: 0 0 10px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                    
+                    .fiche-header h3 {
+                        margin: 0 0 5px 0;
+                        font-size: 16px;
+                        color: #666;
+                    }
+                    
+                    .fiche-header p {
+                        margin: 0;
+                        font-size: 14px;
+                        color: #666;
+                    }
+                    
+                    .fiche-content {
+                        margin-top: 20px;
+                    }
+                    
+                    .info-row {
+                        margin-bottom: 15px;
+                        display: flex;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        border-bottom: 1px dotted #ccc;
+                        padding-bottom: 8px;
+                    }
+                    
+                    .label {
+                        font-weight: bold;
+                        margin-right: 10px;
+                        min-width: 200px;
+                    }
+                    
+                    .value {
+                        flex: 1;
+                        border-bottom: 1px solid #333;
+                        min-height: 20px;
+                        padding: 2px 5px;
+                        margin-right: 10px;
+                    }
+                    
+                    @media print {
+                        body { margin: 0; }
+                        .fiche-container { 
+                            border: 2px solid #000;
+                            margin-bottom: 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                ${fichesHTML}
+            </body>
+            </html>
+        `;
+    }
+    
+    generatePrintableStatistiques() {
+        const today = Utils.formatDate(new Date());
+        const totalPensionnaires = this.pensionnaires.length;
+        const sections = ['Rawda', '1ère section', '2ème section', '3ème section'];
+        
+        // Calculer les statistiques par section
+        let sectionsStats = '';
+        sections.forEach(section => {
+            const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
+            const membres = pensionnairesSection.filter(p => p.type_pensionnaire === 'Membre').length;
+            const sympathisants = pensionnairesSection.filter(p => p.type_pensionnaire === 'Sympathisant').length;
+            
+            sectionsStats += `
+                <tr>
+                    <td>${section}</td>
+                    <td>${pensionnairesSection.length}</td>
+                    <td>${membres}</td>
+                    <td>${sympathisants}</td>
+                </tr>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Statistiques - Daara Re-Creation</title>
+                <style>
+                    @page { size: A4; margin: 20mm; }
+                    body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    .stats-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    .stats-table th, .stats-table td { border: 1px solid #333; padding: 8px; text-align: center; }
+                    .stats-table th { background-color: #f5f5f5; font-weight: bold; }
+                    .summary { margin-top: 30px; padding: 20px; border: 1px solid #333; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>STATISTIQUES DAARA RE-CREATION</h1>
+                    <h2>02 au 23 août 2025</h2>
+                    <p>Rapport généré le ${today}</p>
+                </div>
+                
+                <h3>Répartition par Section</h3>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Total</th>
+                            <th>Membres</th>
+                            <th>Sympathisants</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sectionsStats}
+                        <tr style="font-weight: bold; background-color: #f0f0f0;">
+                            <td>TOTAL</td>
+                            <td>${totalPensionnaires}</td>
+                            <td>${this.pensionnaires.filter(p => p.type_pensionnaire === 'Membre').length}</td>
+                            <td>${this.pensionnaires.filter(p => p.type_pensionnaire === 'Sympathisant').length}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="summary">
+                    <h3>Résumé Général</h3>
+                    <p><strong>Total des pensionnaires :</strong> ${totalPensionnaires}</p>
+                    <p><strong>Nombre de commissions :</strong> ${this.commissions.length}</p>
+                    <p><strong>Sections actives :</strong> ${sections.length}</p>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+    
+    fallbackPrintStatistiques() {
+        try {
+            const printWindow = window.open('', '_blank');
+            const printHTML = this.generatePrintableStatistiques();
+            
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+            
+            Utils.showToast('Document préparé pour impression', 'success');
+            
+        } catch (error) {
+            Utils.handleError(error, 'lors de la préparation de l\'impression');
+        }
     }
 }
 
