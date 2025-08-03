@@ -5,6 +5,11 @@ class Presences {
         this.pensionnaires = [];
         this.presences = [];
         this.currentDate = new Date().toISOString().split('T')[0];
+        this.currentSection = '';
+        this.searchTerm = '';
+        this.currentPage = 1;
+        this.itemsPerPage = 20;
+        this.filteredPensionnaires = [];
     }
 
     async render(container) {
@@ -21,14 +26,39 @@ class Presences {
         try {
             this.pensionnaires = window.dataStorage.getAllPensionnaires();
             this.presences = window.dataStorage.getPresencesByDate(this.currentDate);
+            this.applyFilters();
         } catch (error) {
             console.error('Erreur lors du chargement des données:', error);
             this.pensionnaires = [];
             this.presences = [];
+            this.filteredPensionnaires = [];
         }
+    }
+    
+    applyFilters() {
+        let filtered = [...this.pensionnaires];
+        
+        // Filtrer par section
+        if (this.currentSection) {
+            filtered = filtered.filter(p => p.section === this.currentSection);
+        }
+        
+        // Filtrer par terme de recherche
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase();
+            filtered = filtered.filter(p => 
+                p.prenom.toLowerCase().includes(term) ||
+                p.nom.toLowerCase().includes(term)
+            );
+        }
+        
+        this.filteredPensionnaires = filtered;
+        this.currentPage = 1; // Reset à la première page
     }
 
     generateHTML() {
+        const stats = this.calculateStats();
+        
         return `
             <div class="space-y-6">
                 <!-- Header -->
@@ -48,102 +78,169 @@ class Presences {
                 <!-- Statistiques du jour -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="card text-center">
-                        <div class="text-2xl font-bold text-primary-600">${this.pensionnaires.length}</div>
-                        <div class="text-sm text-gray-600">Total</div>
+                        <div class="text-2xl font-bold text-primary-600">${stats.total}</div>
+                        <div class="text-sm text-gray-600">Total pensionnaires</div>
                     </div>
                     <div class="card text-center">
-                        <div class="text-2xl font-bold text-success-600" id="presents-count">0</div>
+                        <div class="text-2xl font-bold text-success-600">${stats.presents}</div>
                         <div class="text-sm text-gray-600">Présents</div>
                     </div>
                     <div class="card text-center">
-                        <div class="text-2xl font-bold text-danger-600" id="absents-count">0</div>
+                        <div class="text-2xl font-bold text-danger-600">${stats.absents}</div>
                         <div class="text-sm text-gray-600">Absents</div>
                     </div>
                     <div class="card text-center">
-                        <div class="text-2xl font-bold text-warning-600" id="excuses-count">0</div>
+                        <div class="text-2xl font-bold text-warning-600">${stats.excuses}</div>
                         <div class="text-sm text-gray-600">Excusés</div>
                     </div>
                 </div>
 
-                <!-- Liste par section -->
-                <div id="sections-container">
-                    ${this.generateSectionsHTML()}
-                </div>
-            </div>
-        `;
-    }
-
-    generateSectionsHTML() {
-        const sections = ['Rawda', '1ère section', '2ème section', '3ème section'];
-        return sections.map(section => {
-            const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
-            if (pensionnairesSection.length === 0) return '';
-
-            return `
+                <!-- Filtres et recherche -->
                 <div class="card">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-lg font-semibold text-gray-900">${section}</h4>
-                        <div class="flex space-x-2">
-                            <button onclick="presences.markAllSection('${section}', 'Présent')" class="btn btn-sm bg-success-600 text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="form-label">Rechercher</label>
+                            <input type="text" id="search-input" placeholder="Nom ou prénom..." 
+                                   value="${this.searchTerm}" class="form-input">
+                        </div>
+                        <div>
+                            <label class="form-label">Section</label>
+                            <select id="filter-section" class="form-select">
+                                <option value="">Toutes les sections</option>
+                                <option value="Rawda" ${this.currentSection === 'Rawda' ? 'selected' : ''}>Rawda</option>
+                                <option value="1ère section" ${this.currentSection === '1ère section' ? 'selected' : ''}>1ère section</option>
+                                <option value="2ème section" ${this.currentSection === '2ème section' ? 'selected' : ''}>2ème section</option>
+                                <option value="3ème section" ${this.currentSection === '3ème section' ? 'selected' : ''}>3ème section</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="presences.resetFilters()" class="btn-outline w-full">
+                                <i class="fas fa-times mr-2"></i>Réinitialiser
+                            </button>
+                        </div>
+                        <div class="flex items-end space-x-2">
+                            <button onclick="presences.markAllFiltered('Présent')" class="btn btn-sm bg-success-600 text-white flex-1">
                                 Tous présents
                             </button>
-                            <button onclick="presences.markAllSection('${section}', 'Absent')" class="btn btn-sm bg-danger-600 text-white">
+                            <button onclick="presences.markAllFiltered('Absent')" class="btn btn-sm bg-danger-600 text-white flex-1">
                                 Tous absents
                             </button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        ${pensionnairesSection.map(p => this.generatePensionnaireCard(p)).join('')}
-                    </div>
                 </div>
-            `;
-        }).join('');
-    }
 
-    generatePensionnaireCard(pensionnaire) {
-        const presence = this.presences.find(pr => pr.pensionnaire_id === pensionnaire.id);
-        const statut = presence?.statut || '';
-
-        return `
-            <div class="border rounded-lg p-4 ${this.getCardClass(statut)}">
-                <div class="flex items-center mb-3">
-                    <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                        <span class="text-primary-600 font-semibold text-sm">
-                            ${pensionnaire.prenom.charAt(0)}${pensionnaire.nom.charAt(0)}
-                        </span>
+                <!-- Liste des pensionnaires -->
+                <div class="card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-gray-900">
+                            Pensionnaires (${this.filteredPensionnaires.length})
+                        </h4>
+                        <div class="text-sm text-gray-500">
+                            Page ${this.currentPage} sur ${Math.ceil(this.filteredPensionnaires.length / this.itemsPerPage)}
+                        </div>
                     </div>
-                    <div>
-                        <div class="font-medium text-gray-900">${pensionnaire.prenom} ${pensionnaire.nom}</div>
-                        <div class="text-sm text-gray-500">${pensionnaire.type_pensionnaire}</div>
+                    
+                    <div id="pensionnaires-list">
+                        ${this.renderPensionnairesList()}
                     </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex space-x-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="presence_${pensionnaire.id}" value="Présent" 
-                                   ${statut === 'Présent' ? 'checked' : ''} 
-                                   onchange="presences.updatePresence(${pensionnaire.id}, 'Présent')" class="mr-1">
-                            <span class="text-sm text-success-600">Présent</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="presence_${pensionnaire.id}" value="Absent" 
-                                   ${statut === 'Absent' ? 'checked' : ''} 
-                                   onchange="presences.updatePresence(${pensionnaire.id}, 'Absent')" class="mr-1">
-                            <span class="text-sm text-danger-600">Absent</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="presence_${pensionnaire.id}" value="Excusé" 
-                                   ${statut === 'Excusé' ? 'checked' : ''} 
-                                   onchange="presences.updatePresence(${pensionnaire.id}, 'Excusé')" class="mr-1">
-                            <span class="text-sm text-warning-600">Excusé</span>
-                        </label>
+                    
+                    <div id="pagination-container">
+                        ${this.renderPagination()}
                     </div>
                 </div>
             </div>
         `;
     }
-
-    getCardClass(statut) {
+    
+    calculateStats() {
+        const total = this.filteredPensionnaires.length;
+        const presents = this.presences.filter(p => p.statut === 'Présent').length;
+        const absents = this.presences.filter(p => p.statut === 'Absent').length;
+        const excuses = this.presences.filter(p => p.statut === 'Excusé').length;
+        
+        return { total, presents, absents, excuses };
+    }
+    
+    renderPensionnairesList() {
+        const paginatedData = Utils.paginate(this.filteredPensionnaires, this.currentPage, this.itemsPerPage);
+        
+        if (paginatedData.data.length === 0) {
+            return `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-users text-4xl mb-2"></i>
+                    <p>Aucun pensionnaire trouvé</p>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="space-y-3">
+                ${paginatedData.data.map(pensionnaire => this.generatePensionnaireRow(pensionnaire)).join('')}
+            </div>
+        `;
+    }
+    
+    generatePensionnaireRow(pensionnaire) {
+        const presence = this.presences.find(pr => pr.pensionnaire_id === pensionnaire.id);
+        const statut = presence?.statut || '';
+        
+        return `
+            <div class="border rounded-lg p-4 ${this.getRowClass(statut)} hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                            <span class="text-primary-600 font-semibold">
+                                ${pensionnaire.prenom.charAt(0)}${pensionnaire.nom.charAt(0)}
+                            </span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">${pensionnaire.prenom} ${pensionnaire.nom}</div>
+                            <div class="text-sm text-gray-500">
+                                <span class="badge badge-info">${pensionnaire.section}</span>
+                                <span class="ml-2 badge ${pensionnaire.type_pensionnaire === 'Membre' ? 'badge-success' : 'badge-warning'}">
+                                    ${pensionnaire.type_pensionnaire}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="flex space-x-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="presence_${pensionnaire.id}" value="Présent" 
+                                       ${statut === 'Présent' ? 'checked' : ''} 
+                                       onchange="presences.updatePresence(${pensionnaire.id}, 'Présent')" 
+                                       class="mr-2 text-success-600">
+                                <span class="text-sm font-medium text-success-600">Présent</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="presence_${pensionnaire.id}" value="Absent" 
+                                       ${statut === 'Absent' ? 'checked' : ''} 
+                                       onchange="presences.updatePresence(${pensionnaire.id}, 'Absent')" 
+                                       class="mr-2 text-danger-600">
+                                <span class="text-sm font-medium text-danger-600">Absent</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="presence_${pensionnaire.id}" value="Excusé" 
+                                       ${statut === 'Excusé' ? 'checked' : ''} 
+                                       onchange="presences.updatePresence(${pensionnaire.id}, 'Excusé')" 
+                                       class="mr-2 text-warning-600">
+                                <span class="text-sm font-medium text-warning-600">Excusé</span>
+                            </label>
+                        </div>
+                        
+                        ${statut ? `
+                            <div class="text-xs text-gray-500">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    getRowClass(statut) {
         switch (statut) {
             case 'Présent': return 'border-success-200 bg-success-50';
             case 'Absent': return 'border-danger-200 bg-danger-50';
@@ -151,18 +248,119 @@ class Presences {
             default: return 'border-gray-200 bg-white';
         }
     }
+    
+    renderPagination() {
+        const totalPages = Math.ceil(this.filteredPensionnaires.length / this.itemsPerPage);
+        
+        if (totalPages <= 1) return '';
+        
+        const pages = Utils.generatePageNumbers(this.currentPage, totalPages);
+        
+        return `
+            <div class="flex items-center justify-between mt-6 pt-4 border-t">
+                <div class="text-sm text-gray-500">
+                    Affichage de ${(this.currentPage - 1) * this.itemsPerPage + 1} à 
+                    ${Math.min(this.currentPage * this.itemsPerPage, this.filteredPensionnaires.length)} 
+                    sur ${this.filteredPensionnaires.length} pensionnaires
+                </div>
+                <div class="flex space-x-1">
+                    <button onclick="presences.goToPage(${this.currentPage - 1})" 
+                            ${this.currentPage === 1 ? 'disabled' : ''} 
+                            class="px-3 py-1 text-sm border rounded ${this.currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}">
+                        Précédent
+                    </button>
+                    ${pages.map(page => `
+                        <button onclick="presences.goToPage(${page})" 
+                                class="px-3 py-1 text-sm border rounded ${page === this.currentPage ? 'bg-primary-600 text-white' : 'text-gray-700 hover:bg-gray-50'}">
+                            ${page}
+                        </button>
+                    `).join('')}
+                    <button onclick="presences.goToPage(${this.currentPage + 1})" 
+                            ${this.currentPage === totalPages ? 'disabled' : ''} 
+                            class="px-3 py-1 text-sm border rounded ${this.currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}">
+                        Suivant
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    goToPage(page) {
+        const totalPages = Math.ceil(this.filteredPensionnaires.length / this.itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            this.currentPage = page;
+            this.renderPensionnairesList();
+            this.renderPagination();
+            
+            // Mettre à jour l'affichage
+            document.getElementById('pensionnaires-list').innerHTML = this.renderPensionnairesList();
+            document.getElementById('pagination-container').innerHTML = this.renderPagination();
+        }
+    }
+    
+    resetFilters() {
+        this.searchTerm = '';
+        this.currentSection = '';
+        this.currentPage = 1;
+        
+        document.getElementById('search-input').value = '';
+        document.getElementById('filter-section').value = '';
+        
+        this.applyFilters();
+        this.refreshDisplay();
+    }
+    
+    markAllFiltered(statut) {
+        const paginatedData = Utils.paginate(this.filteredPensionnaires, this.currentPage, this.itemsPerPage);
+        
+        paginatedData.data.forEach(pensionnaire => {
+            this.updatePresence(pensionnaire.id, statut);
+        });
+        
+        this.refreshDisplay();
+    }
+    
+    refreshDisplay() {
+        document.getElementById('pensionnaires-list').innerHTML = this.renderPensionnairesList();
+        document.getElementById('pagination-container').innerHTML = this.renderPagination();
+        this.updateStats();
+    }
+    
+    updateStats() {
+        const stats = this.calculateStats();
+        // Mettre à jour les statistiques dans le DOM si nécessaire
+    }
 
     initEventListeners() {
+        // Sélecteur de date
         const dateSelector = document.getElementById('date-selector');
         if (dateSelector) {
             dateSelector.addEventListener('change', async (e) => {
                 this.currentDate = e.target.value;
                 await this.loadData();
-                const container = document.getElementById('page-content');
-                await this.render(container);
+                this.refreshDisplay();
             });
         }
-        this.updateStats();
+        
+        // Recherche
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchTerm = e.target.value;
+                this.applyFilters();
+                this.refreshDisplay();
+            });
+        }
+        
+        // Filtre par section
+        const sectionFilter = document.getElementById('filter-section');
+        if (sectionFilter) {
+            sectionFilter.addEventListener('change', (e) => {
+                this.currentSection = e.target.value;
+                this.applyFilters();
+                this.refreshDisplay();
+            });
+        }
     }
 
     updatePresence(pensionnaireId, statut) {
@@ -179,34 +377,8 @@ class Presences {
             });
         }
         
-        this.updateStats();
-        this.updateCardAppearance(pensionnaireId, statut);
-    }
-
-    updateCardAppearance(pensionnaireId, statut) {
-        const card = document.querySelector(`input[name="presence_${pensionnaireId}"]`).closest('.border');
-        if (card) {
-            card.className = `border rounded-lg p-4 ${this.getCardClass(statut)}`;
-        }
-    }
-
-    markAllSection(section, statut) {
-        const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
-        pensionnairesSection.forEach(p => {
-            this.updatePresence(p.id, statut);
-            const radio = document.querySelector(`input[name="presence_${p.id}"][value="${statut}"]`);
-            if (radio) radio.checked = true;
-        });
-    }
-
-    updateStats() {
-        const presents = this.presences.filter(p => p.statut === 'Présent').length;
-        const absents = this.presences.filter(p => p.statut === 'Absent').length;
-        const excuses = this.presences.filter(p => p.statut === 'Excusé').length;
-
-        document.getElementById('presents-count').textContent = presents;
-        document.getElementById('absents-count').textContent = absents;
-        document.getElementById('excuses-count').textContent = excuses;
+        // Mettre à jour l'affichage en temps réel
+        this.refreshDisplay();
     }
 
     async saveAllPresences() {

@@ -559,6 +559,11 @@ class Pensionnaires {
                                 <option value="Sympathisant" ${p.type_pensionnaire === 'Sympathisant' ? 'selected' : ''}>Sympathisant</option>
                             </select>
                         </div>
+                        
+                        <div>
+                            <label class="form-label">Date d'inscription</label>
+                            <input type="date" name="date_inscription" value="${p.date_inscription || new Date().toISOString().split('T')[0]}" class="form-input">
+                        </div>
                     </div>
                     
                     <!-- Contacts famille -->

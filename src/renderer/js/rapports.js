@@ -208,99 +208,196 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // Créer une nouvelle fenêtre pour l'impression
+            const printWindow = window.open('', '_blank');
             
-            // Configuration
-            const pageWidth = doc.internal.pageSize.width;
-            const margin = 20;
-            let yPosition = 30;
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintablePensionnaires();
             
-            // Titre
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text('LISTE DES PENSIONNAIRES - DAARA RE-CREATION', pageWidth / 2, yPosition, { align: 'center' });
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
             
-            yPosition += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Généré le ${Utils.formatDate(new Date())}`, pageWidth / 2, yPosition, { align: 'center' });
+            // Attendre que le contenu soit chargé puis imprimer
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
             
-            yPosition += 20;
-            
-            // Grouper par section
-            const sections = ['Rawda', '1ère section', '2ème section', '3ème section'];
-            
-            for (const section of sections) {
-                const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
-                if (pensionnairesSection.length === 0) continue;
-                
-                // Vérifier si on a assez de place pour la section
-                if (yPosition > 250) {
-                    doc.addPage();
-                    yPosition = 30;
-                }
-                
-                // Titre de section
-                doc.setFontSize(14);
-                doc.setFont(undefined, 'bold');
-                doc.text(section.toUpperCase(), margin, yPosition);
-                yPosition += 10;
-                
-                // Liste des pensionnaires
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                
-                pensionnairesSection.forEach((p, index) => {
-                    if (yPosition > 270) {
-                        doc.addPage();
-                        yPosition = 30;
-                    }
-                    
-                    const ligne = `${index + 1}. ${p.prenom} ${p.nom} - ${p.type_pensionnaire}`;
-                    doc.text(ligne, margin + 5, yPosition);
-                    yPosition += 6;
-                    
-                    if (p.tel_pere || p.tel_mere) {
-                        const contact = `   Contact: ${p.tel_pere || p.tel_mere}`;
-                        doc.text(contact, margin + 5, yPosition);
-                        yPosition += 6;
-                    }
-                });
-                
-                yPosition += 10;
-            }
-            
-            // Statistiques en bas
-            if (yPosition > 240) {
-                doc.addPage();
-                yPosition = 30;
-            }
-            
-            yPosition += 20;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text('STATISTIQUES', margin, yPosition);
-            yPosition += 10;
-            
-            doc.setFont(undefined, 'normal');
-            doc.text(`Total pensionnaires: ${this.pensionnaires.length}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Membres: ${this.pensionnaires.filter(p => p.type_pensionnaire === 'Membre').length}`, margin, yPosition);
-            yPosition += 6;
-            doc.text(`Sympathisants: ${this.pensionnaires.filter(p => p.type_pensionnaire === 'Sympathisant').length}`, margin, yPosition);
-            
-            // Sauvegarder
-            const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(fileName);
-            
-            Utils.showToast('Export PDF des pensionnaires terminé', 'success');
-        } catch (error) {
-            console.error('Erreur lors de l\'export PDF:', error);
-            Utils.showToast('Erreur lors de l\'export PDF', 'error');
-        } finally {
             Utils.hideLoading();
+            Utils.showToast('Document préparé pour impression', 'success');
+            
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.handleError(error, 'lors de la préparation de l\'impression');
         }
+    }
+    
+    generatePrintablePensionnaires() {
+        const today = Utils.formatDate(new Date());
+        const sections = ['Rawda', '1ère section', '2ème section', '3ème section'];
+        
+        let sectionsHTML = '';
+        
+        sections.forEach(section => {
+            const pensionnairesSection = this.pensionnaires.filter(p => p.section === section);
+            if (pensionnairesSection.length === 0) return;
+            
+            sectionsHTML += `
+                <div class="section-break">
+                    <h2 class="section-title">${section.toUpperCase()}</h2>
+                    <table class="pensionnaires-table">
+                        <thead>
+                            <tr>
+                                <th>N°</th>
+                                <th>Nom & Prénom</th>
+                                <th>Type</th>
+                                <th>Contact</th>
+                                <th>Date Inscription</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pensionnairesSection.map((p, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${p.prenom} ${p.nom}</td>
+                                    <td>${p.type_pensionnaire}</td>
+                                    <td>${p.tel_pere || p.tel_mere || 'N/A'}</td>
+                                    <td>${p.date_inscription ? Utils.formatDate(p.date_inscription) : 'N/A'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Liste des Pensionnaires - Daara Re-Creation</title>
+                <style>
+                    @page {
+                        margin: 2cm;
+                        size: A4;
+                    }
+                    
+                    body {
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                        line-height: 1.4;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #333;
+                        padding-bottom: 15px;
+                    }
+                    
+                    .header h1 {
+                        font-size: 18px;
+                        font-weight: bold;
+                        margin: 0 0 10px 0;
+                    }
+                    
+                    .header p {
+                        margin: 5px 0;
+                        font-size: 11px;
+                    }
+                    
+                    .section-break {
+                        page-break-inside: avoid;
+                        margin-bottom: 25px;
+                    }
+                    
+                    .section-title {
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin: 20px 0 10px 0;
+                        padding: 8px;
+                        background-color: #f5f5f5;
+                        border-left: 4px solid #333;
+                    }
+                    
+                    .pensionnaires-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .pensionnaires-table th,
+                    .pensionnaires-table td {
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    
+                    .pensionnaires-table th {
+                        background-color: #f8f9fa;
+                        font-weight: bold;
+                        font-size: 11px;
+                    }
+                    
+                    .pensionnaires-table td {
+                        font-size: 10px;
+                    }
+                    
+                    .stats {
+                        margin-top: 30px;
+                        padding: 15px;
+                        background-color: #f8f9fa;
+                        border: 1px solid #ddd;
+                    }
+                    
+                    .stats h3 {
+                        margin: 0 0 10px 0;
+                        font-size: 13px;
+                    }
+                    
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 10px;
+                    }
+                    
+                    .stat-item {
+                        font-size: 11px;
+                    }
+                    
+                    @media print {
+                        .section-break {
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>LISTE DES PENSIONNAIRES</h1>
+                    <h2>DAARA RE-CREATION (02-23 AOÛT 2025)</h2>
+                    <p>Document généré le ${today}</p>
+                    <p>Total pensionnaires: ${this.pensionnaires.length}</p>
+                </div>
+                
+                ${sectionsHTML}
+                
+                <div class="stats">
+                    <h3>STATISTIQUES GÉNÉRALES</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">Total pensionnaires: ${this.pensionnaires.length}</div>
+                        <div class="stat-item">Membres: ${this.pensionnaires.filter(p => p.type_pensionnaire === 'Membre').length}</div>
+                        <div class="stat-item">Sympathisants: ${this.pensionnaires.filter(p => p.type_pensionnaire === 'Sympathisant').length}</div>
+                        <div class="stat-item">Sections: ${sections.length}</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
     }
 
     async exportPresencesExcel() {
@@ -548,119 +645,216 @@ class Rapports {
         try {
             Utils.showLoading();
             
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // Créer une nouvelle fenêtre pour l'impression
+            const printWindow = window.open('', '_blank');
             
-            // Configuration
-            const pageWidth = doc.internal.pageSize.width;
-            const margin = 20;
-            let yPosition = 30;
+            // Générer le HTML pour l'impression
+            const printHTML = this.generatePrintableCommissions();
             
-            // Titre
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text('COMMISSIONS DU DAARA RE-CREATION', pageWidth / 2, yPosition, { align: 'center' });
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
             
-            yPosition += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Généré le ${Utils.formatDate(new Date())}`, pageWidth / 2, yPosition, { align: 'center' });
+            // Attendre que le contenu soit chargé puis imprimer
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.close();
+            };
             
-            yPosition += 20;
-            
-            // Parcourir chaque commission
-            this.commissions.forEach((commission, index) => {
-                // Vérifier si on a assez de place
-                if (yPosition > 240) {
-                    doc.addPage();
-                    yPosition = 30;
-                }
-                
-                // Titre de commission
-                doc.setFontSize(14);
-                doc.setFont(undefined, 'bold');
-                doc.text(`${index + 1}. ${commission.nom}`, margin, yPosition);
-                yPosition += 8;
-                
-                // Description
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'italic');
-                const descriptionLines = doc.splitTextToSize(commission.description, pageWidth - 2 * margin);
-                doc.text(descriptionLines, margin + 5, yPosition);
-                yPosition += descriptionLines.length * 5 + 5;
-                
-                // Membres
-                if (commission.membres && commission.membres.length > 0) {
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Membres:', margin + 5, yPosition);
-                    yPosition += 6;
-                    
-                    doc.setFont(undefined, 'normal');
-                    commission.membres.forEach((membre, membreIndex) => {
-                        if (yPosition > 270) {
-                            doc.addPage();
-                            yPosition = 30;
-                        }
-                        
-                        let membreInfo = `  • ${membre.prenom} ${membre.nom}`;
-                        if (membre.poste) membreInfo += ` - ${membre.poste}`;
-                        if (membre.telephone) membreInfo += ` (${membre.telephone})`;
-                        
-                        doc.text(membreInfo, margin + 10, yPosition);
-                        yPosition += 5;
-                        
-                        if (membre.email) {
-                            doc.text(`    Email: ${membre.email}`, margin + 10, yPosition);
-                            yPosition += 5;
-                        }
-                        
-                        if (membre.responsabilites) {
-                            const respLines = doc.splitTextToSize(`    Responsabilités: ${membre.responsabilites}`, pageWidth - 2 * margin - 20);
-                            doc.text(respLines, margin + 10, yPosition);
-                            yPosition += respLines.length * 5;
-                        }
-                        
-                        yPosition += 2;
-                    });
-                } else {
-                    doc.setFont(undefined, 'italic');
-                    doc.text('Aucun membre assigné', margin + 5, yPosition);
-                    yPosition += 6;
-                }
-                
-                yPosition += 10;
-            });
-            
-            // Résumé en bas
-            if (yPosition > 240) {
-                doc.addPage();
-                yPosition = 30;
-            }
-            
-            yPosition += 10;
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text('RÉSUMÉ', margin, yPosition);
-            yPosition += 10;
-            
-            doc.setFont(undefined, 'normal');
-            doc.text(`Nombre total de commissions: ${this.commissions.length}`, margin, yPosition);
-            yPosition += 6;
-            
-            const totalMembres = this.commissions.reduce((total, c) => total + (c.membres ? c.membres.length : 0), 0);
-            doc.text(`Nombre total de membres: ${totalMembres}`, margin, yPosition);
-            
-            // Sauvegarder
-            const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
-            doc.save(fileName);
-            
-            Utils.showToast('Export PDF des commissions terminé', 'success');
-        } catch (error) {
-            console.error('Erreur lors de l\'export PDF:', error);
-            Utils.showToast('Erreur lors de l\'export PDF', 'error');
-        } finally {
             Utils.hideLoading();
+            Utils.showToast('Document préparé pour impression', 'success');
+            
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.handleError(error, 'lors de la préparation de l\'impression');
         }
+    }
+    
+    generatePrintableCommissions() {
+        const today = Utils.formatDate(new Date());
+        
+        let commissionsHTML = '';
+        
+        this.commissions.forEach((commission, index) => {
+            commissionsHTML += `
+                <div class="commission-section">
+                    <h2 class="commission-title">${index + 1}. ${commission.nom}</h2>
+                    <p class="commission-description">${commission.description}</p>
+                    
+                    ${commission.membres && commission.membres.length > 0 ? `
+                        <div class="membres-section">
+                            <h3>Membres de la commission (${commission.membres.length})</h3>
+                            <table class="membres-table">
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Nom & Prénom</th>
+                                        <th>Téléphone</th>
+                                        <th>Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${commission.membres.map((membre, membreIndex) => `
+                                        <tr>
+                                            <td>${membreIndex + 1}</td>
+                                            <td>${membre.prenom} ${membre.nom}</td>
+                                            <td>${membre.telephone || 'N/A'}</td>
+                                            <td>${membre.email || 'N/A'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : '<p class="no-membres">Aucun membre assigné à cette commission</p>'}
+                </div>
+            `;
+        });
+        
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Commissions - Daara Re-Creation</title>
+                <style>
+                    @page {
+                        margin: 2cm;
+                        size: A4;
+                    }
+                    
+                    body {
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                        line-height: 1.4;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #333;
+                        padding-bottom: 15px;
+                    }
+                    
+                    .header h1 {
+                        font-size: 18px;
+                        font-weight: bold;
+                        margin: 0 0 10px 0;
+                    }
+                    
+                    .header p {
+                        margin: 5px 0;
+                        font-size: 11px;
+                    }
+                    
+                    .commission-section {
+                        page-break-inside: avoid;
+                        margin-bottom: 30px;
+                        border: 1px solid #ddd;
+                        padding: 15px;
+                    }
+                    
+                    .commission-title {
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin: 0 0 10px 0;
+                        color: #2563eb;
+                        border-bottom: 1px solid #e5e7eb;
+                        padding-bottom: 5px;
+                    }
+                    
+                    .commission-description {
+                        font-size: 11px;
+                        font-style: italic;
+                        margin: 0 0 15px 0;
+                        color: #666;
+                    }
+                    
+                    .membres-section h3 {
+                        font-size: 12px;
+                        font-weight: bold;
+                        margin: 15px 0 10px 0;
+                    }
+                    
+                    .membres-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 15px;
+                    }
+                    
+                    .membres-table th,
+                    .membres-table td {
+                        border: 1px solid #ddd;
+                        padding: 6px;
+                        text-align: left;
+                    }
+                    
+                    .membres-table th {
+                        background-color: #f8f9fa;
+                        font-weight: bold;
+                        font-size: 10px;
+                    }
+                    
+                    .membres-table td {
+                        font-size: 10px;
+                    }
+                    
+                    .no-membres {
+                        font-style: italic;
+                        color: #666;
+                        font-size: 11px;
+                    }
+                    
+                    .stats {
+                        margin-top: 30px;
+                        padding: 15px;
+                        background-color: #f8f9fa;
+                        border: 1px solid #ddd;
+                    }
+                    
+                    .stats h3 {
+                        margin: 0 0 10px 0;
+                        font-size: 13px;
+                    }
+                    
+                    .stats-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 10px;
+                    }
+                    
+                    .stat-item {
+                        font-size: 11px;
+                    }
+                    
+                    @media print {
+                        .commission-section {
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>COMMISSIONS DU DAARA RE-CREATION</h1>
+                    <h2>(02-23 AOÛT 2025)</h2>
+                    <p>Document généré le ${today}</p>
+                    <p>Total commissions: ${this.commissions.length}</p>
+                </div>
+                
+                ${commissionsHTML}
+                
+                <div class="stats">
+                    <h3>STATISTIQUES GÉNÉRALES</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">Total commissions: ${this.commissions.length}</div>
+                        <div class="stat-item">Total membres: ${this.commissions.reduce((total, c) => total + (c.membres ? c.membres.length : 0), 0)}</div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
     }
 
     async exportStatistiquesExcel() {
