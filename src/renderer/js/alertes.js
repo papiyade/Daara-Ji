@@ -16,11 +16,14 @@ class Alertes {
 
     async loadAlertes() {
         try {
-            // Charger les alertes existantes
-            this.alertes = window.dataStorage.getAllAlertes();
-            
             // Vérifier et générer de nouvelles alertes pour les absences répétées
             await this.checkAbsencesRepetees();
+            
+            // Charger les alertes existantes (non résolues)
+            this.alertes = window.dataStorage.getUnresolvedAlertes();
+            
+            // Mettre à jour le badge
+            this.updateAlerteBadge();
         } catch (error) {
             console.error('Erreur lors du chargement des alertes:', error);
             this.alertes = [];
@@ -57,30 +60,28 @@ class Alertes {
                 if (absences.length >= 3) {
                     const pensionnaire = pensionnaires.find(p => p.id == pensionnaireId);
                     if (pensionnaire) {
-                        // Vérifier si une alerte similaire n'existe pas déjà
-                        const alerteExistante = this.alertes.find(a => 
-                            a.pensionnaire_id == pensionnaireId && 
-                            a.type === 'absence_repetee' &&
-                            !a.resolu
-                        );
+                        // Créer une nouvelle alerte (la méthode createAlert vérifie déjà les doublons)
+                        const nouvelleAlerte = {
+                            pensionnaire_id: parseInt(pensionnaireId),
+                            prenom: pensionnaire.prenom,
+                            nom: pensionnaire.nom,
+                            section: pensionnaire.section,
+                            type: 'absence_repetee',
+                            message: `${absences.length} absences cette semaine (${absences.join(', ')})`,
+                            date_alerte: new Date().toISOString().split('T')[0],
+                            lu: false,
+                            priorite: 'haute'
+                        };
                         
-                        if (!alerteExistante) {
-                            const nouvelleAlerte = {
-                                id: Date.now() + Math.random(),
-                                pensionnaire_id: pensionnaireId,
-                                prenom: pensionnaire.prenom,
-                                nom: pensionnaire.nom,
-                                section: pensionnaire.section,
-                                type: 'absence_repetee',
-                                message: `${absences.length} absences cette semaine (${absences.join(', ')})`,
-                                date_alerte: new Date().toISOString().split('T')[0],
-                                lu: false,
-                                resolu: false,
-                                priorite: 'haute'
-                            };
-                            
-                            window.dataStorage.addAlerte(nouvelleAlerte);
-                            this.alertes.push(nouvelleAlerte);
+                        // La méthode createAlert gère automatiquement les doublons
+                        const alerteCreee = window.dataStorage.createAlert(nouvelleAlerte);
+                        
+                        // Si une nouvelle alerte a été créée, l'ajouter à la liste locale
+                        if (alerteCreee && !this.alertes.find(a => a.id === alerteCreee.id)) {
+                            // Ajouter les propriétés manquantes pour l'affichage
+                            alerteCreee.prenom = pensionnaire.prenom;
+                            alerteCreee.nom = pensionnaire.nom;
+                            alerteCreee.section = pensionnaire.section;
                         }
                     }
                 }
@@ -92,16 +93,22 @@ class Alertes {
     }
 
     generateHTML() {
+        // Filtrer les alertes non résolues pour l'affichage
+        const alertesActives = this.alertes.filter(a => !a.resolved);
+        
         return `
             <div class="space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Alertes et Notifications</h3>
-                        <p class="text-sm text-gray-600">${this.alertes.length} alerte(s) active(s)</p>
+                        <p class="text-sm text-gray-600">${alertesActives.length} alerte(s) active(s)</p>
                     </div>
+                    <button onclick="alertes.refreshAlertes()" class="btn-outline btn-sm">
+                        <i class="fas fa-sync-alt mr-2"></i>Actualiser
+                    </button>
                 </div>
 
-                ${this.alertes.length === 0 ? `
+                ${alertesActives.length === 0 ? `
                     <div class="card text-center py-12">
                         <div class="text-success-500 text-6xl mb-4">
                             <i class="fas fa-check-circle"></i>
@@ -111,7 +118,7 @@ class Alertes {
                     </div>
                 ` : `
                     <div class="space-y-4">
-                        ${this.alertes.map(alerte => this.generateAlerteCard(alerte)).join('')}
+                        ${alertesActives.map(alerte => this.generateAlerteCard(alerte)).join('')}
                     </div>
                 `}
             </div>
@@ -200,7 +207,7 @@ class Alertes {
 
     updateAlerteBadge() {
         const badge = document.getElementById('alertes-badge');
-        const alertesActives = this.alertes.filter(a => !a.resolu);
+        const alertesActives = this.alertes.filter(a => !a.resolved);
         
         if (badge) {
             if (alertesActives.length > 0) {
@@ -212,6 +219,25 @@ class Alertes {
         }
     }
 
+    // Méthode pour actualiser les alertes
+    async refreshAlertes() {
+        try {
+            Utils.showLoading();
+            await this.loadAlertes();
+            
+            // Recharger la page
+            const container = document.getElementById('page-content');
+            await this.render(container);
+            
+            Utils.showToast('Alertes actualisées', 'success');
+        } catch (error) {
+            console.error('Erreur lors de l\'actualisation des alertes:', error);
+            Utils.showToast('Erreur lors de l\'actualisation des alertes', 'error');
+        } finally {
+            Utils.hideLoading();
+        }
+    }
+
     // Méthode pour créer une alerte manuelle
     async createManualAlert(type, message, pensionnaireId = null) {
         try {
@@ -220,7 +246,6 @@ class Alertes {
                 null;
             
             const nouvelleAlerte = {
-                id: Date.now() + Math.random(),
                 pensionnaire_id: pensionnaireId,
                 prenom: pensionnaire ? pensionnaire.prenom : '',
                 nom: pensionnaire ? pensionnaire.nom : '',
@@ -229,20 +254,20 @@ class Alertes {
                 message: message,
                 date_alerte: new Date().toISOString().split('T')[0],
                 lu: false,
-                resolu: false,
                 priorite: 'normale'
             };
             
-            window.dataStorage.addAlerte(nouvelleAlerte);
-            this.alertes.push(nouvelleAlerte);
+            const alerteCreee = window.dataStorage.createAlert(nouvelleAlerte);
             
-            Utils.showToast('Alerte créée avec succès', 'success');
-            
-            // Recharger la page
-            const container = document.getElementById('page-content');
-            await this.render(container);
-            
-            this.updateAlerteBadge();
+            if (alerteCreee) {
+                Utils.showToast('Alerte créée avec succès', 'success');
+                
+                // Recharger la page
+                const container = document.getElementById('page-content');
+                await this.render(container);
+                
+                this.updateAlerteBadge();
+            }
         } catch (error) {
             console.error('Erreur lors de la création de l\'alerte:', error);
             Utils.showToast('Erreur lors de la création de l\'alerte', 'error');
