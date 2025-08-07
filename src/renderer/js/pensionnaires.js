@@ -399,7 +399,16 @@ class Pensionnaires {
                 result = window.dataStorage.addPensionnaire(pensionnaire);
             }
             
-            modal.remove();
+            // Fermer le modal en toute sécurité
+            try {
+                if (modal && modal.remove) {
+                    modal.remove();
+                }
+            } catch (e) {
+                console.warn('Erreur lors de la fermeture du modal:', e);
+            }
+            
+            // Recharger les données et afficher le message de succès
             await this.loadPensionnaires();
             this.applyFilters();
             
@@ -729,22 +738,49 @@ class Pensionnaires {
                 'Date inscription': p.date_inscription ? Utils.formatDate(p.date_inscription) : ''
             }));
 
-            // Utiliser l'API Electron pour exporter
-            const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Export CSV
+                this.exportToCSV(data);
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export Excel');
         } finally {
             Utils.hideLoading();
         }
+    }
+
+    exportToCSV(data) {
+        // Convertir les données en CSV
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+        ].join('\n');
+
+        // Créer et télécharger le fichier
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `pensionnaires_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     async exportToPDF() {
@@ -754,16 +790,27 @@ class Pensionnaires {
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintablePensionnaires();
             
-            // Utiliser l'API Electron pour exporter
-            const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
-            const result = await window.electronAPI.exportPDF(printHTML, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Ouvrir la fenêtre d'impression du navigateur
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                Utils.showToast('Fenêtre d\'impression ouverte (API Electron non disponible)', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');

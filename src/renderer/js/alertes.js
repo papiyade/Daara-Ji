@@ -126,6 +126,16 @@ class Alertes {
     }
 
     generateAlerteCard(alerte) {
+        // Récupérer les informations du pensionnaire si elles ne sont pas présentes
+        let pensionnaire = null;
+        if (alerte.pensionnaire_id) {
+            pensionnaire = window.dataStorage.getPensionnaireById(alerte.pensionnaire_id);
+        }
+        
+        const prenom = alerte.prenom || (pensionnaire ? pensionnaire.prenom : 'Inconnu');
+        const nom = alerte.nom || (pensionnaire ? pensionnaire.nom : '');
+        const section = alerte.section || (pensionnaire ? pensionnaire.section : 'Non définie');
+        
         return `
             <div class="card border-l-4 border-warning-400">
                 <div class="flex items-start justify-between">
@@ -137,14 +147,14 @@ class Alertes {
                         </div>
                         <div class="ml-4">
                             <h4 class="text-lg font-medium text-gray-900">
-                                ${alerte.prenom} ${alerte.nom}
+                                ${prenom} ${nom}
                             </h4>
                             <p class="text-gray-600 mb-2">${alerte.message}</p>
                             <div class="flex items-center text-sm text-gray-500">
                                 <i class="fas fa-calendar mr-1"></i>
                                 ${Utils.formatDate(alerte.date_alerte)}
                                 <span class="mx-2">•</span>
-                                <span class="badge badge-info">${alerte.section}</span>
+                                <span class="badge badge-info">${section}</span>
                             </div>
                         </div>
                     </div>

@@ -77,13 +77,13 @@ class Commissions {
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-3">
                                             <span class="text-primary-600 font-semibold text-sm">
-                                                ${membre.prenom.charAt(0)}${membre.nom.charAt(0)}
+                                                ${(membre.prenom || 'N').charAt(0)}${(membre.nom || 'N').charAt(0)}
                                             </span>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">${membre.prenom} ${membre.nom}</div>
+                                            <div class="font-medium text-gray-900">${membre.prenom || 'Prénom'} ${membre.nom || 'Nom'}</div>
                                             <div class="text-sm text-gray-500">
-                                                ${membre.section}${membre.poste ? ` • ${membre.poste}` : ''}
+                                                ${membre.section || 'Section non définie'}${membre.poste ? ` • ${membre.poste}` : ''}
                                             </div>
                                             ${membre.telephone ? `<div class="text-xs text-gray-400"><i class="fas fa-phone mr-1"></i>${membre.telephone}</div>` : ''}
                                         </div>
@@ -452,22 +452,49 @@ class Commissions {
                 'Notes': m.notes || ''
             }));
 
-            // Utiliser l'API Electron pour exporter
-            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Export CSV
+                this.exportCommissionToCSV(data, commission.acronyme);
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export Excel');
         } finally {
             Utils.hideLoading();
         }
+    }
+
+    exportCommissionToCSV(data, acronyme) {
+        // Convertir les données en CSV
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+        ].join('\n');
+
+        // Créer et télécharger le fichier
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `commission_${acronyme}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     async exportCommissionToPDF(commissionId) {
@@ -480,16 +507,27 @@ class Commissions {
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintableCommission(commission);
             
-            // Utiliser l'API Electron pour exporter
-            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
-            const result = await window.electronAPI.exportPDF(printHTML, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Ouvrir la fenêtre d'impression du navigateur
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(printHTML);
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                Utils.showToast('Fenêtre d\'impression ouverte (API Electron non disponible)', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');

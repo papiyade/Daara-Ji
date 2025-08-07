@@ -12,9 +12,9 @@ class App {
             // Initialiser l'application
             console.log('Initialisation de l\'application Daara Re-Creation Manager...');
             
-            // Vérifier la disponibilité des APIs Electron
+            // Vérifier la disponibilité des APIs Electron (non bloquant)
             if (!window.electronAPI) {
-                throw new Error('APIs Electron non disponibles');
+                console.warn('APIs Electron non disponibles - Mode développement');
             }
 
             // Marquer comme initialisé
@@ -24,7 +24,8 @@ class App {
             
         } catch (error) {
             console.error('Erreur lors de l\'initialisation:', error);
-            Utils.showToast('Erreur lors de l\'initialisation de l\'application', 'error');
+            // Ne pas afficher l'erreur à l'utilisateur au démarrage
+            // Utils.showToast('Erreur lors de l\'initialisation de l\'application', 'error');
         }
     }
 
