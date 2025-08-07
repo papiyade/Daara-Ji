@@ -764,15 +764,19 @@ class Pensionnaires {
     }
 
     exportToCSV(data) {
-        // Convertir les données en CSV
+        // Convertir les données en CSV avec encodage UTF-8
         const headers = Object.keys(data[0]);
         const csvContent = [
             headers.join(','),
             ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
         ].join('\n');
 
-        // Créer et télécharger le fichier
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Ajouter le BOM UTF-8 pour une meilleure compatibilité
+        const BOM = '\uFEFF';
+        const csvWithBOM = BOM + csvContent;
+
+        // Créer et télécharger le fichier avec encodage UTF-8
+        const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
@@ -804,19 +808,64 @@ class Pensionnaires {
                     Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
                 }
             } else {
-                // Fallback: Ouvrir la fenêtre d'impression du navigateur
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-                Utils.showToast('Fenêtre d\'impression ouverte (API Electron non disponible)', 'success');
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Liste des Pensionnaires');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');
         } finally {
             Utils.hideLoading();
         }
+    }
+
+    printToPDF(htmlContent, title) {
+        // Créer une nouvelle fenêtre pour l'impression
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        
+        // Écrire le contenu HTML avec styles d'impression
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title}</title>
+                <style>
+                    @media print {
+                        body { margin: 0; font-family: Arial, sans-serif; }
+                        .no-print { display: none !important; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .page-break { page-break-before: always; }
+                    }
+                    @media screen {
+                        body { margin: 20px; font-family: Arial, sans-serif; }
+                        .print-button { 
+                            position: fixed; top: 10px; right: 10px; 
+                            background: #007bff; color: white; border: none; 
+                            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                        }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    }
+                </style>
+            </head>
+            <body>
+                <button class="print-button no-print" onclick="window.print()">🖨️ Imprimer / Sauvegarder PDF</button>
+                ${htmlContent}
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Auto-ouvrir la boîte de dialogue d'impression après un court délai
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
     }
     
     generatePrintablePensionnaires() {
