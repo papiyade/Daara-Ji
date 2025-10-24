@@ -128,6 +128,13 @@ class Utils {
 
     // Création de modales
     static createModal(title, content, size = 'md') {
+        // Vérifier que le container existe
+        const container = document.getElementById('modal-container');
+        if (!container) {
+            console.error('Modal container not found!');
+            return null;
+        }
+
         const modal = document.createElement('div');
         modal.className = 'modal';
         
@@ -138,25 +145,116 @@ class Utils {
             xl: 'max-w-4xl'
         };
 
+        // Styles inline pour s'assurer que le modal s'affiche
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        `;
+
         modal.innerHTML = `
-            <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="modal-content w-full ${sizeClasses[size]} max-h-screen overflow-y-auto">
-                    <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">${title}</h3>
-                        <button class="text-gray-400 hover:text-gray-600" onclick="this.closest('.modal').remove()">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div class="p-6">
-                        ${content}
-                    </div>
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                max-width: ${sizeClasses[size] === 'max-w-md' ? '28rem' : 
+                           sizeClasses[size] === 'max-w-lg' ? '32rem' : 
+                           sizeClasses[size] === 'max-w-2xl' ? '42rem' : '56rem'};
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+            ">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 1.5rem;
+                    border-bottom: 1px solid #e5e7eb;
+                ">
+                    <h3 style="
+                        font-size: 1.125rem;
+                        font-weight: 600;
+                        color: #111827;
+                        margin: 0;
+                    ">${title}</h3>
+                    <button class="modal-close-btn" style="
+                        color: #9ca3af;
+                        background: none;
+                        border: none;
+                        font-size: 1.25rem;
+                        cursor: pointer;
+                        padding: 0.25rem;
+                    " title="Fermer">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div style="padding: 1.5rem;">
+                    ${content}
                 </div>
             </div>
         `;
 
-        document.getElementById('modal-container').appendChild(modal);
+        // Ajouter les événements de fermeture
+        const closeBtn = modal.querySelector('.modal-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+
+        // Fermer en cliquant sur le backdrop
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+        // Fermer avec Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        container.appendChild(modal);
+        
+        // Focus sur le modal pour l'accessibilité
+        modal.focus();
+        
+        console.log('Modal created and added to DOM');
         return modal;
+    }
+
+    // Fonction de test pour les modals
+    static testModal() {
+        console.log('Testing modal...');
+        const testContent = `
+            <div>
+                <h4>Test Modal</h4>
+                <p>Si vous voyez ce modal, la fonction createModal fonctionne !</p>
+                <button onclick="alert('Bouton cliqué!')" style="
+                    background: #3b82f6;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: 0.25rem;
+                    cursor: pointer;
+                ">Test Bouton</button>
+            </div>
+        `;
+        return this.createModal('Test Modal', testContent, 'md');
     }
 
     // Génération d'ID unique
@@ -330,4 +428,3 @@ class Utils {
 
 // Export pour utilisation globale
 window.Utils = Utils;
-

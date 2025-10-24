@@ -31,8 +31,8 @@ class App {
     // Méthode pour nettoyer les ressources avant fermeture
     cleanup() {
         // Nettoyer les graphiques du dashboard
-        if (window.Dashboard) {
-            window.Dashboard.destroy();
+        if (window.dashboard) {
+            window.dashboard.destroy();
         }
         
         console.log('Nettoyage des ressources terminé');

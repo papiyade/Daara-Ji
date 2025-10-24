@@ -1,190 +1,142 @@
 # Guide d'Installation - Daara Re-Creation Manager
 
-Ce guide vous accompagne pas à pas pour installer et utiliser l'application de gestion du Daara Re-Creation.
+Ce guide vous accompagne pas à pas pour installer et utiliser l'application Daara Re-Creation Manager sur votre ordinateur.
 
-## 📋 Prérequis Système
+## 📋 Prérequis
 
-### Configuration Minimale
-- **Système d'exploitation** : Windows 10/11, macOS 10.14+, ou Linux Ubuntu 18.04+
-- **RAM** : 4 GB minimum, 8 GB recommandé
-- **Espace disque** : 500 MB pour l'application + espace pour les données
-- **Résolution écran** : 1280x720 minimum, 1920x1080 recommandé
+### Système d'exploitation supporté
+- ✅ Windows 10/11 (64-bit)
+- ✅ macOS 10.14+ (Intel et Apple Silicon)
+- ✅ Linux Ubuntu 18.04+ / Debian 10+ / CentOS 8+
 
-### Logiciels Requis
+### Logiciels requis
 - **Node.js** version 16 ou supérieure
 - **npm** (inclus avec Node.js) ou **yarn**
-- **Git** pour cloner le repository
 
-## 🚀 Installation Étape par Étape
+## 🚀 Installation Rapide
 
 ### Étape 1 : Installer Node.js
 
 #### Windows
-1. Téléchargez Node.js depuis https://nodejs.org/
-2. Exécutez l'installateur et suivez les instructions
-3. Vérifiez l'installation : ouvrez CMD et tapez `node --version`
+1. Aller sur [nodejs.org](https://nodejs.org/)
+2. Télécharger la version LTS (recommandée)
+3. Exécuter l'installateur et suivre les instructions
+4. Redémarrer l'ordinateur
 
 #### macOS
 ```bash
 # Avec Homebrew (recommandé)
 brew install node
 
-# Ou téléchargez depuis https://nodejs.org/
+# Ou télécharger depuis nodejs.org
 ```
 
 #### Linux (Ubuntu/Debian)
 ```bash
 # Méthode recommandée avec NodeSource
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
-# Vérification
+# Vérifier l'installation
 node --version
 npm --version
 ```
 
-### Étape 2 : Cloner le Projet
+### Étape 2 : Télécharger le projet
 
+#### Option A : Téléchargement ZIP
+1. Aller sur [GitHub - Daara-Ji](https://github.com/papiyade/Daara-Ji)
+2. Cliquer sur "Code" → "Download ZIP"
+3. Extraire le fichier ZIP dans un dossier de votre choix
+
+#### Option B : Git Clone (recommandé)
 ```bash
-# Cloner le repository
 git clone https://github.com/papiyade/Daara-Ji.git
-
-# Naviguer dans le dossier
 cd Daara-Ji
 ```
 
-### Étape 3 : Installer les Dépendances
+### Étape 3 : Installation des dépendances
+
+Ouvrir un terminal/invite de commande dans le dossier du projet :
 
 ```bash
-# Installer toutes les dépendances
+# Installer les dépendances
 npm install
 
-# Si vous rencontrez des erreurs, essayez :
-npm install --legacy-peer-deps
+# Attendre que l'installation se termine (peut prendre quelques minutes)
 ```
 
-### Étape 4 : Configuration Initiale
+### Étape 4 : Lancer l'application
 
 ```bash
-# Compiler les styles CSS
-npm run css:build
-```
-
-### Étape 5 : Premier Démarrage
-
-```bash
-# Démarrer en mode développement
-npm run dev
-
-# Ou en mode production
+# Démarrer l'application en mode développement
 npm start
+```
+
+L'application devrait s'ouvrir automatiquement dans une nouvelle fenêtre.
+
+## 📦 Créer un Exécutable
+
+Pour créer un fichier exécutable que vous pouvez installer sur d'autres ordinateurs :
+
+### Windows (.exe)
+```bash
+npm run build:win
+```
+Le fichier sera créé dans `dist/Daara Re-Creation Manager Setup.exe`
+
+### macOS (.dmg)
+```bash
+npm run build:mac
+```
+Le fichier sera créé dans `dist/Daara Re-Creation Manager.dmg`
+
+### Linux (.AppImage)
+```bash
+npm run build:linux
+```
+Le fichier sera créé dans `dist/Daara Re-Creation Manager.AppImage`
+
+### Toutes les plateformes
+```bash
+npm run build:all
 ```
 
 ## 🔧 Configuration Avancée
 
-### Configuration de la Base de Données
+### Personnaliser l'icône de l'application
 
-L'application utilise SQLite et se configure automatiquement. La base de données sera créée dans le dossier `data/` au premier démarrage.
+1. Créer vos icônes dans le dossier `assets/` :
+   - `icon.ico` (Windows, 256x256)
+   - `icon.icns` (macOS, 512x512)
+   - `icon.png` (Linux, 512x512)
 
-**Emplacement** : `data/daara.db`
-
-### Personnalisation des Styles
-
-Pour modifier l'apparence de l'application :
-
-1. Éditez `src/renderer/css/input.css`
-2. Modifiez `tailwind.config.js` pour les couleurs et thèmes
-3. Recompilez : `npm run css:build`
-
-### Configuration des Exports
-
-Les exports (Excel/PDF) sont sauvegardés par défaut dans le dossier de téléchargements de l'utilisateur.
-
-## 📦 Création d'un Exécutable
-
-### Pour Toutes les Plateformes
+2. Reconstruire l'application :
 ```bash
 npm run build
 ```
 
-### Pour une Plateforme Spécifique
+### Modifier la configuration
 
-#### Windows
+Éditer le fichier `package.json` section `"build"` pour :
+- Changer le nom de l'application
+- Modifier l'ID de l'application
+- Personnaliser les options d'installation
+
+## 🐛 Résolution des Problèmes
+
+### Erreur "node: command not found"
+**Solution :** Node.js n'est pas installé ou pas dans le PATH
 ```bash
-npm run build:win
+# Vérifier l'installation
+node --version
+npm --version
+
+# Si pas installé, suivre l'étape 1
 ```
-Génère : `dist/Daara Re-Creation Manager Setup.exe`
 
-#### macOS
-```bash
-npm run build:mac
-```
-Génère : `dist/Daara Re-Creation Manager.dmg`
-
-#### Linux
-```bash
-npm run build:linux
-```
-Génère : `dist/Daara Re-Creation Manager.AppImage`
-
-## 🎯 Installation sur d'Autres PC
-
-### Méthode 1 : Exécutable (Recommandée)
-
-1. **Créez l'exécutable** sur votre PC de développement :
-   ```bash
-   npm run build:win  # Pour Windows
-   ```
-
-2. **Copiez le fichier** `dist/Daara Re-Creation Manager Setup.exe` sur le PC cible
-
-3. **Exécutez l'installateur** sur le PC cible
-   - Double-cliquez sur le fichier .exe
-   - Suivez les instructions d'installation
-   - L'application sera installée et accessible depuis le menu Démarrer
-
-### Méthode 2 : Installation Manuelle
-
-Si vous préférez installer manuellement :
-
-1. **Copiez tout le dossier** du projet sur le PC cible
-2. **Installez Node.js** sur le PC cible
-3. **Ouvrez un terminal** dans le dossier du projet
-4. **Installez les dépendances** :
-   ```bash
-   npm install --production
-   ```
-5. **Démarrez l'application** :
-   ```bash
-   npm start
-   ```
-
-### Méthode 3 : Version Portable
-
-Pour créer une version portable :
-
-1. **Modifiez le package.json** :
-   ```json
-   "build": {
-     "nsis": {
-       "oneClick": false,
-       "allowToChangeInstallationDirectory": true,
-       "createDesktopShortcut": true,
-       "createStartMenuShortcut": true
-     }
-   }
-   ```
-
-2. **Construisez** :
-   ```bash
-   npm run build:win
-   ```
-
-## 🛠️ Dépannage
-
-### Problèmes Courants
-
-#### "npm install" échoue
+### Erreur "npm install" échoue
+**Solutions possibles :**
 ```bash
 # Nettoyer le cache npm
 npm cache clean --force
@@ -192,112 +144,105 @@ npm cache clean --force
 # Supprimer node_modules et réinstaller
 rm -rf node_modules package-lock.json
 npm install
+
+# Utiliser yarn à la place
+npm install -g yarn
+yarn install
 ```
 
-#### Erreur "better-sqlite3"
+### L'application ne démarre pas
+**Solutions :**
+1. Vérifier que toutes les dépendances sont installées
+2. Redémarrer le terminal
+3. Vérifier les permissions du dossier
 ```bash
-# Réinstaller avec rebuild
-npm rebuild better-sqlite3
-
-# Ou installer une version compatible
-npm install better-sqlite3@latest
+# Réinstaller Electron
+npm install electron --save-dev
 ```
 
-#### L'application ne démarre pas
-1. Vérifiez que Node.js est installé : `node --version`
-2. Vérifiez les permissions du dossier
-3. Consultez les logs dans la console
-
-#### Base de données corrompue
-1. Fermez l'application
-2. Supprimez le dossier `data/`
-3. Redémarrez l'application (la base sera recréée)
-
-#### Styles non appliqués
+### Erreur de construction (build)
+**Solutions :**
 ```bash
-# Recompiler les CSS
-npm run css:build
+# Installer electron-builder globalement
+npm install -g electron-builder
 
-# Vérifier Tailwind
-npx tailwindcss --version
+# Nettoyer et reconstruire
+npm run clean
+npm install
+npm run build
 ```
 
-### Logs et Débogage
+### Base de données corrompue
+**Solution :**
+1. Fermer l'application
+2. Supprimer le fichier `daara_data.db` dans le dossier de l'application
+3. Relancer l'application (la base sera recréée automatiquement)
 
-#### Activer les logs détaillés
-```bash
-# Démarrer avec debug
-DEBUG=* npm start
+### Problèmes d'export Excel/PDF
+**Vérifications :**
+1. Vérifier la connexion internet (pour les CDN)
+2. Ouvrir les outils développeur (F12) et vérifier la console
+3. Réinstaller les dépendances
 
-# Ou en mode développement
-npm run dev
-```
+## 📱 Mode PWA (Navigateur)
 
-#### Emplacement des logs
-- **Windows** : `%APPDATA%/Daara Re-Creation Manager/logs/`
-- **macOS** : `~/Library/Logs/Daara Re-Creation Manager/`
-- **Linux** : `~/.config/Daara Re-Creation Manager/logs/`
+L'application peut aussi fonctionner dans un navigateur web :
 
-## 📱 Utilisation Mobile (Future)
+1. Ouvrir le fichier `src/renderer/index.html` dans Chrome/Edge
+2. Cliquer sur l'icône d'installation dans la barre d'adresse
+3. L'application sera installée comme PWA
 
-L'application est actuellement desktop uniquement, mais la structure permet une extension mobile future avec :
-- Capacitor pour iOS/Android
-- Interface responsive déjà intégrée
-- API backend séparée possible
+**Limitations du mode PWA :**
+- Pas d'accès au système de fichiers local
+- Exports limités (téléchargements uniquement)
+- Pas de notifications système
 
-## 🔐 Sécurité et Sauvegarde
+## 🔄 Mise à Jour
 
-### Sauvegarde des Données
-```bash
-# Sauvegarder la base de données
-cp data/daara.db backup/daara_$(date +%Y%m%d).db
-```
+Pour mettre à jour l'application :
 
-### Restauration
-```bash
-# Restaurer une sauvegarde
-cp backup/daara_20250802.db data/daara.db
-```
-
-### Sécurité
-- Les données sont stockées localement
-- Aucune connexion internet requise
-- Chiffrement possible en ajoutant SQLCipher
+1. Télécharger la nouvelle version
+2. Sauvegarder votre fichier `daara_data.db`
+3. Remplacer les fichiers de l'application
+4. Restaurer votre base de données
+5. Relancer l'installation des dépendances si nécessaire
 
 ## 📞 Support Technique
 
-### Avant de Contacter le Support
-1. Vérifiez cette documentation
-2. Consultez les logs d'erreur
-3. Testez sur un environnement propre
-4. Notez votre configuration système
+### Avant de demander de l'aide
 
-### Informations à Fournir
-- Version de l'application
+1. Vérifier ce guide de dépannage
+2. Consulter les logs d'erreur (F12 → Console)
+3. Vérifier que votre système répond aux prérequis
+
+### Obtenir de l'aide
+
+- **GitHub Issues :** [Créer une issue](https://github.com/papiyade/Daara-Ji/issues)
+- **Email :** contact@daara-recreation.com
+- **Documentation :** Consulter le README.md
+
+### Informations à fournir
+
+Quand vous demandez de l'aide, incluez :
 - Système d'exploitation et version
-- Version de Node.js
+- Version de Node.js (`node --version`)
 - Message d'erreur complet
 - Étapes pour reproduire le problème
 
-### Contacts
-- **GitHub Issues** : https://github.com/papiyade/Daara-Ji/issues
-- **Email Support** : [À définir]
-- **Documentation** : Dossier `docs/` du projet
+## ✅ Vérification de l'Installation
 
-## 🎓 Formation Utilisateurs
+Pour vérifier que tout fonctionne correctement :
 
-### Ressources Disponibles
-- **Guide utilisateur** : `docs/guide-utilisateur.md`
-- **Vidéos tutoriels** : [À créer]
-- **FAQ** : `docs/faq.md`
+1. ✅ L'application se lance sans erreur
+2. ✅ Vous pouvez ajouter un pensionnaire test
+3. ✅ Les présences se marquent correctement
+4. ✅ Les exports Excel/PDF fonctionnent
+5. ✅ Les alertes s'affichent
+6. ✅ La base de données se sauvegarde
 
-### Formation Recommandée
-1. **Administrateur** : 2-3 heures de formation
-2. **Utilisateurs** : 1 heure de présentation
-3. **Support technique** : Formation complète recommandée
+Si tous ces points sont validés, votre installation est réussie ! 🎉
 
 ---
 
-**Dernière mise à jour** : Août 2025  
-**Version du guide** : 1.0  
-**Compatibilité** : Daara Re-Creation Manager v1.0.0
+**Bon usage de l'application Daara Re-Creation Manager !**
+

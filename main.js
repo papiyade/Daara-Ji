@@ -1,5 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const XLSX = require('xlsx');
 
 // Garder une référence globale de l'objet window
 let mainWindow;
@@ -67,4 +69,73 @@ ipcMain.handle('show-save-dialog', async (event, options) => {
 ipcMain.handle('show-message-box', async (event, options) => {
   const result = await dialog.showMessageBox(mainWindow, options);
   return result;
+});
+
+// Handler pour sauvegarder un fichier
+ipcMain.handle('save-file', async (event, filePath, content) => {
+  try {
+    fs.writeFileSync(filePath, content, 'utf8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler pour exporter Excel
+ipcMain.handle('export-excel', async (event, data, defaultFileName) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Sauvegarder le fichier Excel',
+      defaultPath: defaultFileName,
+      filters: [
+        { name: 'Excel Files', extensions: ['xlsx'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    
+    if (!result.canceled && result.filePath) {
+      // Créer le fichier Excel
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+      
+      // Sauvegarder le fichier
+      XLSX.writeFile(wb, result.filePath);
+      
+      return { success: true, filePath: result.filePath };
+    } else {
+      return { success: false, canceled: true };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Handler pour exporter PDF
+ipcMain.handle('export-pdf', async (event, htmlContent, defaultFileName) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Sauvegarder le fichier PDF',
+      defaultPath: defaultFileName,
+      filters: [
+        { name: 'PDF Files', extensions: ['pdf'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    
+    if (!result.canceled && result.filePath) {
+      // Pour le PDF, on va créer un fichier HTML temporaire et demander à l'utilisateur d'imprimer
+      const tempHtmlPath = path.join(__dirname, 'temp_export.html');
+      fs.writeFileSync(tempHtmlPath, htmlContent, 'utf8');
+      
+      // Ouvrir le fichier HTML dans le navigateur par défaut pour impression
+      require('electron').shell.openPath(tempHtmlPath);
+      
+      return { success: true, filePath: result.filePath, tempPath: tempHtmlPath };
+    } else {
+      return { success: false, canceled: true };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });

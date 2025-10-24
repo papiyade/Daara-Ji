@@ -1,78 +1,62 @@
 # Daara Re-Creation Manager
 
-Application desktop de gestion du Daara Re-Creation (02-23 août 2025).
+Application desktop/PWA pour la gestion complète du Daara Re-Creation (02-23 Août 2025).
 
-## 🌟 Fonctionnalités
+## 🎯 Fonctionnalités
 
 ### 📊 Dashboard Interactif
 - Vue d'ensemble des statistiques du Daara
-- Graphiques en temps réel des présences
+- Graphiques et métriques en temps réel
 - Alertes et notifications importantes
-- Actions rapides pour les tâches courantes
 
 ### 👥 Gestion des Pensionnaires
-- **CRUD complet** : Ajouter, modifier, supprimer, consulter
+- **CRUD complet** : Créer, lire, modifier, supprimer
 - **Fiche d'inscription complète** avec tous les champs requis :
   - Informations personnelles (nom, prénom, date/lieu de naissance, adresse)
-  - Classification (section, type : Membre/Sympathisant)
-  - Contacts famille (père, mère, encadreur avec téléphones)
-  - Scolarisation (statut, langue, niveau, école)
-  - Informations santé (maladies, traitements)
+  - Classification par section (Rawda, 1ère, 2ème, 3ème section)
+  - Type de pensionnaire (Membre/Sympathisant)
+  - Contacts famille (père, mère, encadreur)
+  - Informations scolaires et de santé
   - Participation financière
-- **Filtres et recherche** avancés
-- **Pagination** pour une navigation fluide
-- **Exports** Excel et PDF
+- **Export** : Excel et PDF
 
-### ✅ Gestion des Présences
+### ✅ Gestion des Présences/Absences
 - Marquage quotidien des présences (Lundi-Samedi)
-- Interface intuitive par section
-- Statuts : Présent, Absent, Excusé
-- Actions groupées par section
-- Statistiques en temps réel
-- **Système d'alertes** automatique pour absences répétées (3 fois/semaine)
+- Interface par section avec statistiques en temps réel
+- **Système d'alertes automatiques** : 3 absences/semaine = alerte
+- Export des rapports de présence
 
 ### 🏛️ Gestion des Commissions
-- **5 Commissions prédéfinies** :
-  - CIPS (Commission de l'Intelligence et de la Perception Spirituelle)
-  - CA (Commission Administrative)
-  - CTC (Commission de Trésor et Capacitation)
-  - Commission Logistique
-  - PF (Points Focaux)
-- Gestion des membres de chaque commission
-- Vue d'ensemble des responsabilités
+- **5 Commissions** : CIPS, CA, CTC, Commission Logistique, Points Focaux
+- Gestion des membres avec informations complètes
+- Export des listes de commissions
 
 ### 🚨 Système d'Alertes
 - Détection automatique des absences répétées
-- Notifications visuelles dans l'interface
-- Suivi et résolution des alertes
-- Badge de notification dans la navigation
+- Notifications en temps réel
+- Gestion des alertes (marquer comme lu, résoudre)
 
 ### 📈 Rapports et Exports
-- **Export Excel** : Listes, statistiques, présences
-- **Export PDF** : Fiches individuelles, rapports
-- **Impression** directe des documents
-- Rapports personnalisés
+- **Export Excel** : Pensionnaires, présences, commissions, statistiques
+- **Export PDF** : Listes formatées, rapports détaillés
+- **Fiches individuelles** des pensionnaires
+- **Rapports personnalisés**
 
 ## 🛠️ Technologies Utilisées
 
-- **Electron.js** - Framework desktop multiplateforme
-- **HTML5/CSS3/JavaScript** - Interface utilisateur
-- **Tailwind CSS** - Framework CSS moderne et responsive
-- **SQLite** - Base de données locale
-- **Chart.js** - Graphiques interactifs
-- **Better-SQLite3** - Driver SQLite performant
-- **XLSX** - Export Excel
-- **jsPDF** - Génération PDF
+- **Frontend** : HTML5, CSS3 (Tailwind CSS), JavaScript (ES6+)
+- **Desktop** : Electron.js
+- **Base de données** : SQLite (stockage local)
+- **Exports** : SheetJS (Excel), jsPDF (PDF)
+- **Charts** : Chart.js
 
-## 📋 Prérequis
+## 📦 Installation et Configuration
 
-- **Node.js** (version 16 ou supérieure)
-- **npm** ou **yarn**
-- **Git**
+### Prérequis
+- Node.js (version 16 ou supérieure)
+- npm ou yarn
 
-## 🚀 Installation et Démarrage
-
-### 1. Cloner le repository
+### 1. Cloner le projet
 ```bash
 git clone https://github.com/papiyade/Daara-Ji.git
 cd Daara-Ji
@@ -83,141 +67,134 @@ cd Daara-Ji
 npm install
 ```
 
-### 3. Compiler les styles CSS
-```bash
-npm run css:build
-```
-
-### 4. Démarrer l'application en mode développement
-```bash
-npm run dev
-```
-
-### 5. Démarrer l'application en mode production
+### 3. Lancer l'application en mode développement
 ```bash
 npm start
 ```
 
-## 📦 Packaging et Distribution
-
-### Construire pour toutes les plateformes
+### 4. Construire l'application pour la production
 ```bash
 npm run build
 ```
 
-### Construire pour Windows uniquement
+### 5. Packager l'application (exécutable)
 ```bash
+# Pour Windows
 npm run build:win
-```
 
-### Construire pour macOS uniquement
-```bash
+# Pour macOS
 npm run build:mac
-```
 
-### Construire pour Linux uniquement
-```bash
+# Pour Linux
 npm run build:linux
-```
 
-Les fichiers d'installation seront générés dans le dossier `dist/`.
+# Pour toutes les plateformes
+npm run build:all
+```
 
 ## 📁 Structure du Projet
 
 ```
 Daara-Ji/
-├── main.js                    # Process principal Electron
-├── preload.js                 # Script de préchargement
-├── package.json               # Configuration npm
-├── tailwind.config.js         # Configuration Tailwind
-├── postcss.config.js          # Configuration PostCSS
 ├── src/
-│   ├── database/
-│   │   ├── schema.sql         # Schéma de base de données
-│   │   └── database.js        # Gestionnaire de base de données
-│   └── renderer/
-│       ├── index.html         # Page principale
+│   ├── main/                 # Processus principal Electron
+│   │   └── main.js
+│   └── renderer/             # Interface utilisateur
 │       ├── css/
-│       │   ├── input.css      # Styles source
-│       │   └── styles.css     # Styles compilés
-│       └── js/
-│           ├── app.js         # Application principale
-│           ├── navigation.js  # Gestion navigation
-│           ├── utils.js       # Utilitaires
-│           ├── dashboard.js   # Module Dashboard
-│           ├── pensionnaires.js # Module Pensionnaires
-│           ├── presences.js   # Module Présences
-│           ├── commissions.js # Module Commissions
-│           ├── alertes.js     # Module Alertes
-│           └── rapports.js    # Module Rapports
-├── data/                      # Base de données SQLite (créé automatiquement)
-├── dist/                      # Fichiers de distribution (créé lors du build)
-└── docs/                      # Documentation
+│       │   └── styles.css    # Styles Tailwind CSS
+│       ├── js/
+│       │   ├── utils.js      # Utilitaires
+│       │   ├── storage.js    # Gestion SQLite
+│       │   ├── navigation.js # Navigation
+│       │   ├── dashboard.js  # Dashboard
+│       │   ├── pensionnaires.js # Gestion pensionnaires
+│       │   ├── presences.js  # Gestion présences
+│       │   ├── commissions.js # Gestion commissions
+│       │   ├── alertes.js    # Système d'alertes
+│       │   └── rapports.js   # Exports et rapports
+│       └── index.html        # Page principale
+├── package.json
+├── tailwind.config.js        # Configuration Tailwind
+└── README.md
 ```
 
-## 🎯 Utilisation
+## 🚀 Utilisation
 
-### Premier Démarrage
+### Premier Lancement
 1. L'application créera automatiquement la base de données SQLite
-2. Les commissions seront pré-créées
+2. Les 5 commissions seront initialisées automatiquement
 3. Vous pouvez commencer à ajouter des pensionnaires
 
-### Workflow Quotidien
-1. **Matin** : Consulter le dashboard pour les statistiques
-2. **Présences** : Marquer les présences de la journée
-3. **Alertes** : Vérifier et traiter les alertes d'absences
-4. **Gestion** : Ajouter/modifier des pensionnaires si nécessaire
+### Gestion Quotidienne
+1. **Matin** : Marquer les présences dans l'onglet "Présences"
+2. **Vérifier** les alertes pour les absences répétées
+3. **Exporter** les rapports selon les besoins
 
 ### Exports et Rapports
-- Utilisez le module "Rapports" pour générer des exports
-- Les fichiers sont sauvegardés dans le dossier de téléchargements
-- Formats disponibles : Excel (.xlsx) et PDF
+- Tous les exports sont sauvegardés dans le dossier de téléchargements
+- Les fichiers sont nommés avec la date pour éviter les conflits
+- Format Excel pour les données tabulaires
+- Format PDF pour les rapports formatés
 
-## 🔧 Configuration
+## 🔧 Configuration Avancée
 
 ### Base de Données
-- La base de données SQLite est créée automatiquement dans `data/daara.db`
-- Sauvegarde automatique des données
-- Pas de configuration requise
+- Fichier SQLite : `daara_data.db` (créé automatiquement)
+- Sauvegarde automatique à chaque modification
+- Possibilité de sauvegarde manuelle via l'interface
 
 ### Personnalisation
-- Modifiez `tailwind.config.js` pour personnaliser les couleurs
-- Ajustez les styles dans `src/renderer/css/input.css`
-- Recompilez avec `npm run css:build`
+- Modifier les sections dans `src/renderer/js/pensionnaires.js`
+- Ajouter des commissions dans `src/renderer/js/storage.js`
+- Personnaliser les alertes dans `src/renderer/js/alertes.js`
+
+## 📱 Mode PWA (Progressive Web App)
+
+L'application peut également fonctionner comme PWA dans un navigateur :
+
+1. Ouvrir `src/renderer/index.html` dans un navigateur moderne
+2. Installer comme application web (Chrome/Edge)
+3. Fonctionnalités limitées (pas d'accès fichier système)
 
 ## 🐛 Dépannage
 
-### Problèmes courants
+### Problèmes Courants
 
 **L'application ne démarre pas**
-- Vérifiez que Node.js est installé : `node --version`
-- Réinstallez les dépendances : `rm -rf node_modules && npm install`
+- Vérifier que Node.js est installé
+- Supprimer `node_modules` et relancer `npm install`
 
-**Erreur de base de données**
-- Supprimez le dossier `data/` et redémarrez l'application
-- La base sera recréée automatiquement
+**Erreurs d'export**
+- Vérifier que les bibliothèques XLSX et jsPDF sont chargées
+- Contrôler la console développeur (F12)
 
-**Styles non appliqués**
-- Recompilez les CSS : `npm run css:build`
-- Vérifiez que Tailwind est correctement configuré
+**Base de données corrompue**
+- Supprimer le fichier `daara_data.db`
+- Relancer l'application (recréation automatique)
+
+### Logs et Debug
+- Ouvrir les outils développeur : `Ctrl+Shift+I` (Windows/Linux) ou `Cmd+Option+I` (Mac)
+- Les erreurs sont affichées dans la console
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 📞 Support
 
 Pour toute question ou problème :
-- Créez une issue sur GitHub
-- Contactez l'équipe de développement
-- Consultez la documentation dans le dossier `docs/`
-
-## 📄 Licence
-
-MIT License - Voir le fichier LICENSE pour plus de détails.
-
-## 🙏 Remerciements
-
-Développé pour le Daara Re-Creation avec ❤️
+- Créer une issue sur GitHub
+- Contacter l'équipe de développement
 
 ---
 
-**Version** : 1.0.0  
-**Date** : Août 2025  
-**Auteur** : Équipe Daara Re-Creation
+**Développé avec ❤️ pour le Daara Re-Creation**
+

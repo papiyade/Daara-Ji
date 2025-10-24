@@ -7,35 +7,27 @@ yarn-error.log*
 # Build outputs
 dist/
 build/
+out/
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+daara_data.db
 
 # Logs
-logs
+logs/
 *.log
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
 coverage/
+*.lcov
 
 # nyc test coverage
 .nyc_output
@@ -45,6 +37,9 @@ jspm_packages/
 
 # Optional npm cache directory
 .npm
+
+# Optional eslint cache
+.eslintcache
 
 # Optional REPL history
 .node_repl_history
@@ -57,21 +52,63 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Electron build outputs
-out/
-app/
-packages/
+# Electron
+dist_electron/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+*.exe
+*.msi
+
+# macOS
+*.dmg
+
+# Linux
+*.AppImage
+*.deb
+*.rpm
 
 # Temporary files
 tmp/
 temp/
+*.tmp
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Backup files
+*.bak
+*.backup
 
-# Application data
-data/
-storage/
+# Package files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Application specific
+exports/
+backups/
+user_data/
+

@@ -101,22 +101,46 @@ class Navigation {
             // Charger le contenu de la page
             switch (page) {
                 case 'dashboard':
-                    await window.Dashboard.render(contentContainer);
+                    if (window.dashboard && window.dashboard.render) {
+                        await window.dashboard.render(contentContainer);
+                    } else {
+                        this.renderDashboardFallback(contentContainer);
+                    }
                     break;
                 case 'pensionnaires':
-                    await window.Pensionnaires.render(contentContainer);
+                    if (window.pensionnaires && window.pensionnaires.render) {
+                        await window.pensionnaires.render(contentContainer);
+                    } else {
+                        this.renderPensionnairesFallback(contentContainer);
+                    }
                     break;
                 case 'presences':
-                    await window.Presences.render(contentContainer);
+                    if (window.presences && window.presences.render) {
+                        await window.presences.render(contentContainer);
+                    } else {
+                        this.renderPresencesFallback(contentContainer);
+                    }
                     break;
                 case 'commissions':
-                    await window.Commissions.render(contentContainer);
+                    if (window.commissions && window.commissions.render) {
+                        await window.commissions.render(contentContainer);
+                    } else {
+                        this.renderCommissionsFallback(contentContainer);
+                    }
                     break;
                 case 'alertes':
-                    await window.Alertes.render(contentContainer);
+                    if (window.alertes && window.alertes.render) {
+                        await window.alertes.render(contentContainer);
+                    } else {
+                        this.renderAlertesFallback(contentContainer);
+                    }
                     break;
                 case 'rapports':
-                    await window.Rapports.render(contentContainer);
+                    if (window.rapports && window.rapports.render) {
+                        await window.rapports.render(contentContainer);
+                    } else {
+                        this.renderRapportsFallback(contentContainer);
+                    }
                     break;
                 default:
                     contentContainer.innerHTML = '<div class="text-center py-12"><h3 class="text-xl text-gray-500">Page en construction</h3></div>';
@@ -234,20 +258,215 @@ class Navigation {
             this.navigateTo(savedPage);
         }
     }
+
+    // Méthodes de fallback pour les pages
+    renderDashboardFallback(container) {
+        container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-primary-100 rounded-lg">
+                            <i class="fas fa-users text-primary-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Pensionnaires</p>
+                            <p class="text-2xl font-semibold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-success-100 rounded-lg">
+                            <i class="fas fa-check text-success-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Présents Aujourd'hui</p>
+                            <p class="text-2xl font-semibold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-warning-100 rounded-lg">
+                            <i class="fas fa-exclamation-triangle text-warning-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Absents</p>
+                            <p class="text-2xl font-semibold text-gray-900">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-info-100 rounded-lg">
+                            <i class="fas fa-sitemap text-info-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Commissions</p>
+                            <p class="text-2xl font-semibold text-gray-900">5</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center py-8">
+                <p class="text-gray-500">Dashboard en mode basique - Module Dashboard non chargé</p>
+            </div>
+        `;
+    }
+
+    renderPensionnairesFallback(container) {
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">Gestion des Pensionnaires</h3>
+                        <button onclick="pensionnaires.showAddForm()" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Nouveau Pensionnaire
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <div class="text-gray-400 text-6xl mb-4">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="text-xl text-gray-700 mb-2">Aucun pensionnaire</h3>
+                        <p class="text-gray-500 mb-4">Commencez par ajouter votre premier pensionnaire</p>
+                        <button onclick="pensionnaires.showAddForm()" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Ajouter un Pensionnaire
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderCommissionsFallback(container) {
+        const commissionsData = [
+            { id: 'cips', nom: 'CIPS', description: 'Commission de l\'Intelligence et de la Perception Spirituelle', membres: [] },
+            { id: 'ca', nom: 'CA', description: 'Commission Administrative', membres: [] },
+            { id: 'ctc', nom: 'CTC', description: 'Commission de Trésor et Capacitation', membres: [] },
+            { id: 'logistique', nom: 'Commission Logistique', description: 'Gestion logistique du Daara', membres: [] },
+            { id: 'pf', nom: 'Points Focaux', description: 'Points Focaux du Daara', membres: [] }
+        ];
+
+        let commissionsHTML = commissionsData.map(commission => `
+            <div class="bg-white rounded-lg shadow mb-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900">${commission.nom}</h3>
+                            <p class="text-sm text-gray-600">${commission.description}</p>
+                        </div>
+                        <button onclick="commissions.addMember('${commission.id}')" class="btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Ajouter
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-8">
+                        <div class="text-gray-400 text-4xl mb-4">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <p class="text-gray-500">Aucun membre dans cette commission</p>
+                        <button onclick="commissions.addMember('${commission.id}')" class="btn-secondary mt-3">
+                            <i class="fas fa-plus mr-2"></i>Ajouter un membre
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Commissions du Daara</h2>
+                <p class="text-gray-600">Gérez les différentes commissions et leurs membres</p>
+            </div>
+            ${commissionsHTML}
+        `;
+    }
+
+    renderPresencesFallback(container) {
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Gestion des Présences</h3>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <div class="text-gray-400 text-6xl mb-4">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <h3 class="text-xl text-gray-700 mb-2">Module Présences</h3>
+                        <p class="text-gray-500">Cette fonctionnalité sera bientôt disponible</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderAlertesFallback(container) {
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Alertes et Notifications</h3>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <div class="text-gray-400 text-6xl mb-4">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <h3 class="text-xl text-gray-700 mb-2">Aucune alerte</h3>
+                        <p class="text-gray-500">Toutes les notifications apparaîtront ici</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderRapportsFallback(container) {
+        container.innerHTML = `
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Rapports et Exports</h3>
+                </div>
+                <div class="p-6">
+                    <div class="text-center py-12">
+                        <div class="text-gray-400 text-6xl mb-4">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h3 class="text-xl text-gray-700 mb-2">Module Rapports</h3>
+                        <p class="text-gray-500">Génération de rapports bientôt disponible</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Initialiser la navigation quand le DOM est prêt
 document.addEventListener('DOMContentLoaded', () => {
-    window.navigation = new Navigation();
-    
-    // Écouter les raccourcis clavier
-    document.addEventListener('keydown', (event) => {
-        window.navigation.handleKeyboardShortcuts(event);
-    });
-    
-    // Sauvegarder l'état avant de fermer
-    window.addEventListener('beforeunload', () => {
-        window.navigation.saveNavigationState();
-    });
+    // Attendre un peu pour que tous les modules soient chargés
+    setTimeout(() => {
+        window.navigation = new Navigation();
+        
+        // Écouter les raccourcis clavier
+        document.addEventListener('keydown', (event) => {
+            window.navigation.handleKeyboardShortcuts(event);
+        });
+        
+        // Sauvegarder l'état avant de fermer
+        window.addEventListener('beforeunload', () => {
+            window.navigation.saveNavigationState();
+        });
+        
+        console.log('Navigation initialized. Available modules:', {
+            dashboard: !!window.dashboard,
+            pensionnaires: !!window.pensionnaires,
+            presences: !!window.presences,
+            commissions: !!window.commissions,
+            alertes: !!window.alertes,
+            rapports: !!window.rapports
+        });
+    }, 100);
 });
-

@@ -1,8 +1,8 @@
 {
   "name": "daara-recreation-manager",
   "version": "1.0.0",
-  "description": "Application de gestion du Daara Re-Creation (02-23 août 2025)",
-  "main": "main.js",
+  "description": "Application de gestion complète du Daara Re-Creation",
+  "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
@@ -10,56 +10,110 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "css:build": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css",
-    "css:watch": "tailwindcss -i ./src/renderer/css/input.css -o ./src/renderer/css/styles.css --watch"
+    "build:all": "electron-builder --win --mac --linux",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "daara",
     "gestion",
     "pensionnaires",
+    "presences",
     "electron",
-    "desktop"
+    "desktop",
+    "pwa"
   ],
-  "author": "Daara Re-Creation",
+  "author": {
+    "name": "Daara Re-Creation",
+    "email": "contact@daara-recreation.com"
+  },
   "license": "MIT",
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.10",
-    "autoprefixer": "^10.4.15",
     "electron": "^27.0.0",
-    "electron-builder": "^24.6.4",
-    "postcss": "^8.4.29",
-    "tailwindcss": "^3.3.0"
+    "electron-builder": "^24.6.4"
   },
   "dependencies": {
-    "chart.js": "^4.4.0",
-    "date-fns": "^2.30.0",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.5.31",
+    "sqlite3": "^5.1.6",
     "xlsx": "^0.18.5"
   },
   "build": {
-    "appId": "com.daaraji.recreation-manager",
+    "appId": "com.daara.recreation.manager",
     "productName": "Daara Re-Creation Manager",
     "directories": {
       "output": "dist"
     },
     "files": [
-      "main.js",
-      "preload.js",
       "src/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "src/renderer",
+        "to": "app/renderer",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
       "icon": "assets/icon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.education"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "assets/icon.png"
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "Education"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Daara Re-Creation Manager"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/papiyade/Daara-Ji.git"
+  },
+  "bugs": {
+    "url": "https://github.com/papiyade/Daara-Ji/issues"
+  },
+  "homepage": "https://github.com/papiyade/Daara-Ji#readme"
 }

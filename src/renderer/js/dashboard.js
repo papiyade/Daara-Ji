@@ -27,21 +27,58 @@ class Dashboard {
 
     async loadStats() {
         try {
-            // Utiliser le nouveau système de stockage
-            this.stats = window.dataStorage.getGeneralStats();
+            // Charger les pensionnaires
+            const pensionnaires = window.dataStorage.getAllPensionnaires();
+            
+            // Calculer les statistiques générales
+            this.stats = {
+                total_pensionnaires: pensionnaires.length,
+                membres: pensionnaires.filter(p => p.type_pensionnaire === 'Membre').length,
+                sympathisants: pensionnaires.filter(p => p.type_pensionnaire === 'Sympathisant').length,
+                sections: {
+                    'Rawda': pensionnaires.filter(p => p.section === 'Rawda').length,
+                    '1ère section': pensionnaires.filter(p => p.section === '1ère section').length,
+                    '2ème section': pensionnaires.filter(p => p.section === '2ème section').length,
+                    '3ème section': pensionnaires.filter(p => p.section === '3ème section').length
+                }
+            };
             
             // Ajouter les statistiques de présence du jour
             const today = new Date().toISOString().split('T')[0];
-            const presencesToday = window.dataStorage.getPresenceStats(today, today);
-            this.stats.presencesToday = presencesToday;
+            const presencesToday = window.dataStorage.getPresencesByDate(today);
+            
+            const presents = presencesToday.filter(p => p.statut === 'Présent').length;
+            const absents = presencesToday.filter(p => p.statut === 'Absent').length;
+            const excuses = presencesToday.filter(p => p.statut === 'Excusé').length;
+            
+            // Les absents = total pensionnaires - présents - excusés
+            const totalPensionnaires = pensionnaires.length;
+            const realAbsents = totalPensionnaires - presents - excuses;
+            
+            this.stats.presencesToday = {
+                presents: presents,
+                absents: Math.max(0, realAbsents), // S'assurer que ce n'est pas négatif
+                excuses: excuses,
+                total: totalPensionnaires
+            };
+            
+            // Calculer le taux de présence
+            if (totalPensionnaires > 0) {
+                this.stats.presencesToday.tauxPresence = Math.round(
+                    (presents / totalPensionnaires) * 100
+                );
+            } else {
+                this.stats.presencesToday.tauxPresence = 0;
+            }
             
         } catch (error) {
             console.error('Erreur lors du chargement des statistiques:', error);
             this.stats = {
                 total_pensionnaires: 0,
-                sections: [],
-                types: [],
-                presencesToday: { presents: 0, absents: 0, total: 0 }
+                membres: 0,
+                sympathisants: 0,
+                sections: {},
+                presencesToday: { presents: 0, absents: 0, excuses: 0, total: 0, tauxPresence: 0 }
             };
         }
     }
@@ -104,7 +141,7 @@ class Dashboard {
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm font-medium text-gray-500">Taux de Présence</p>
-                                <p class="text-2xl font-bold text-gray-900">${this.calculatePresenceRate()}%</p>
+                                <p class="text-2xl font-bold text-gray-900">${this.stats.presencesToday.tauxPresence}%</p>
                             </div>
                         </div>
                     </div>
@@ -217,8 +254,8 @@ class Dashboard {
         const ctx = document.getElementById('sectionChart');
         if (!ctx) return;
 
-        const data = this.stats.sections.map(item => item.count);
-        const labels = this.stats.sections.map(item => item.section);
+        const labels = Object.keys(this.stats.sections);
+        const data = Object.values(this.stats.sections);
         const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
         this.charts.section = new Chart(ctx, {
@@ -252,8 +289,8 @@ class Dashboard {
         const ctx = document.getElementById('typeChart');
         if (!ctx) return;
 
-        const data = this.stats.types.map(item => item.count);
-        const labels = this.stats.types.map(item => item.type);
+        const labels = ['Membres', 'Sympathisants'];
+        const data = [this.stats.membres, this.stats.sympathisants];
 
         this.charts.type = new Chart(ctx, {
             type: 'pie',
@@ -347,8 +384,11 @@ class Dashboard {
             
             try {
                 const presences = window.dataStorage.getPresencesByDate(dateStr);
-                const presentCount = presences.filter(p => p.statut === 'present').length;
-                const absentCount = presences.filter(p => p.statut === 'absent').length;
+                const totalPensionnaires = window.dataStorage.getAllPensionnaires().length;
+                
+                const presentCount = presences.filter(p => p.statut === 'Présent').length;
+                const excusedCount = presences.filter(p => p.statut === 'Excusé').length;
+                const absentCount = Math.max(0, totalPensionnaires - presentCount - excusedCount);
                 
                 presents.push(presentCount);
                 absents.push(absentCount);
@@ -463,4 +503,4 @@ class Dashboard {
 }
 
 // Créer une instance globale
-window.Dashboard = new Dashboard();
+window.dashboard = new Dashboard();
