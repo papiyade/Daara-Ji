@@ -422,7 +422,7 @@ class DataStorage {
             weekDates.includes(p.date)
         );
 
-        const absences = weekPresences.filter(p => p.statut === 'absent');
+        const absences = weekPresences.filter(p => p.statut === 'Absent');
 
         // Si 3 absences ou plus dans la semaine, créer une alerte
         if (absences.length >= 3) {
@@ -492,6 +492,35 @@ class DataStorage {
         if (alert) {
             alert.resolved = true;
             alert.resolved_at = new Date().toISOString();
+            this.setItem(this.storageKeys.alertes, alertes);
+            return alert;
+        }
+        return null;
+    }
+
+    /**
+     * Alias pour createAlert (compatibilité)
+     */
+    addAlerte(alertData) {
+        return this.createAlert(alertData);
+    }
+
+    /**
+     * Alias pour resolveAlert (compatibilité)
+     */
+    resolveAlerte(alertId) {
+        return this.resolveAlert(alertId);
+    }
+
+    /**
+     * Marque une alerte comme lue
+     */
+    markAlerteAsRead(alertId) {
+        const alertes = this.getAllAlertes();
+        const alert = alertes.find(a => a.id === parseInt(alertId));
+        if (alert) {
+            alert.lu = true;
+            alert.read_at = new Date().toISOString();
             this.setItem(this.storageKeys.alertes, alertes);
             return alert;
         }

@@ -77,13 +77,13 @@ class Commissions {
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-3">
                                             <span class="text-primary-600 font-semibold text-sm">
-                                                ${membre.prenom.charAt(0)}${membre.nom.charAt(0)}
+                                                ${(membre.prenom || 'N').charAt(0)}${(membre.nom || 'N').charAt(0)}
                                             </span>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">${membre.prenom} ${membre.nom}</div>
+                                            <div class="font-medium text-gray-900">${membre.prenom || 'Prénom'} ${membre.nom || 'Nom'}</div>
                                             <div class="text-sm text-gray-500">
-                                                ${membre.section}${membre.poste ? ` • ${membre.poste}` : ''}
+                                                ${membre.section || 'Section non définie'}${membre.poste ? ` • ${membre.poste}` : ''}
                                             </div>
                                             ${membre.telephone ? `<div class="text-xs text-gray-400"><i class="fas fa-phone mr-1"></i>${membre.telephone}</div>` : ''}
                                         </div>
@@ -452,22 +452,53 @@ class Commissions {
                 'Notes': m.notes || ''
             }));
 
-            // Utiliser l'API Electron pour exporter
-            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Export CSV
+                this.exportCommissionToCSV(data, commission.acronyme);
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export Excel');
         } finally {
             Utils.hideLoading();
         }
+    }
+
+    exportCommissionToCSV(data, acronyme) {
+        // Convertir les données en CSV avec encodage UTF-8
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+        ].join('\n');
+
+        // Ajouter le BOM UTF-8 pour une meilleure compatibilité
+        const BOM = '\uFEFF';
+        const csvWithBOM = BOM + csvContent;
+
+        // Créer et télécharger le fichier avec encodage UTF-8
+        const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `commission_${acronyme}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     async exportCommissionToPDF(commissionId) {
@@ -480,22 +511,78 @@ class Commissions {
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintableCommission(commission);
             
-            // Utiliser l'API Electron pour exporter
-            const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
-            const result = await window.electronAPI.exportPDF(printHTML, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `commission_${commission.acronyme}_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, `Commission ${commission.acronyme}`);
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
             }
         } catch (error) {
             Utils.handleError(error, 'lors de l\'export PDF');
         } finally {
             Utils.hideLoading();
         }
+    }
+
+    printToPDF(htmlContent, title) {
+        // Créer une nouvelle fenêtre pour l'impression
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        
+        // Écrire le contenu HTML avec styles d'impression
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title}</title>
+                <style>
+                    @media print {
+                        body { margin: 0; font-family: Arial, sans-serif; }
+                        .no-print { display: none !important; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .page-break { page-break-before: always; }
+                    }
+                    @media screen {
+                        body { margin: 20px; font-family: Arial, sans-serif; }
+                        .print-button { 
+                            position: fixed; top: 10px; right: 10px; 
+                            background: #007bff; color: white; border: none; 
+                            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                        }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    }
+                </style>
+            </head>
+            <body>
+                <button class="print-button no-print" onclick="window.print()">🖨️ Imprimer / Sauvegarder PDF</button>
+                ${htmlContent}
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Auto-ouvrir la boîte de dialogue d'impression après un court délai
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
     }
     
     generatePrintableCommission(commission) {

@@ -186,16 +186,24 @@ class Rapports {
                 'Participation': p.participation || ''
             }));
 
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
+                if (window.electronAPI && window.electronAPI.exportExcel) {
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Export CSV
+                this.exportToCSV(data, 'Pensionnaires_Daara');
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
             }
         } catch (error) {
             console.error('Erreur lors de l\'export Excel:', error);
@@ -212,16 +220,23 @@ class Rapports {
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintablePensionnaires();
             
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
-            const result = await window.electronAPI.exportPDF(printHTML, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Pensionnaires_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Liste des Pensionnaires - Daara');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
             }
             
             Utils.hideLoading();
@@ -452,16 +467,24 @@ class Rapports {
                 };
             });
 
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
+                if (window.electronAPI && window.electronAPI.exportExcel) {
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Export CSV
+                this.exportToCSV(data, 'Presences_Daara');
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
             }
         } catch (error) {
             console.error('Erreur lors de l\'export Excel:', error);
@@ -488,16 +511,23 @@ class Rapports {
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintablePresences();
             
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
-            const result = await window.electronAPI.exportPDF(printHTML, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Presences_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
             } else {
-                Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Rapport de Présences - Daara');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
             }
         } catch (error) {
             console.error('Erreur lors de l\'export PDF:', error);
@@ -653,31 +683,46 @@ class Rapports {
                         'Date d\'ajout': ''
                     });
                 }
-            });
-
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
+            } else {
+                // Fallback: Export CSV
+                this.exportToCSV(data, 'Commissions_Daara');
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
+            }
             } else {
                 Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
         } catch (error) {
-            console.error('Erreur lors de l\'export Excel:', error);
-            Utils.showToast('Erreur lors de l\'export Excel', 'error');
-        } finally {
-            Utils.hideLoading();
-        }
-    }
-
-    async exportCommissionsPDF() {
-        try {
-            Utils.showLoading();
-            
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Commissions_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
+            } else {
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Commissions - Daara');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
+            }
             // Générer le HTML pour l'impression
             const printHTML = this.generatePrintableCommissions();
             
@@ -956,17 +1001,24 @@ class Rapports {
                     'Catégorie': section,
                     'Valeur': pensionnairesSection.length,
                     'Détails': `Membres: ${membres}, Sympathisants: ${sympathisants}`
-                });
-            });
-            
-            // Statistiques des commissions
-            data.push({
-                'Type': 'Commissions',
-                'Catégorie': 'Nombre total',
-                'Valeur': this.commissions.length,
-                'Détails': ''
-            });
-            
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportExcel) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
+                const result = await window.electronAPI.exportExcel(data, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
+            } else {
+                // Fallback: Export CSV
+                this.exportToCSV(data, 'Statistiques_Daara');
+                Utils.showToast('Export CSV terminé (API Electron non disponible)', 'success');
+            }
             this.commissions.forEach(commission => {
                 const nombreMembres = commission.membres ? commission.membres.length : 0;
                 data.push({
@@ -975,16 +1027,24 @@ class Rapports {
                     'Valeur': nombreMembres,
                     'Détails': commission.description || ''
                 });
-            });
-            
-            // Utiliser l'API Electron pour exporter
-            const fileName = `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.xlsx`;
-            const result = await window.electronAPI.exportExcel(data, fileName);
-            
-            if (result.success && !result.canceled) {
-                Utils.showToast(`Export Excel terminé: ${result.filePath}`, 'success');
-            } else if (result.canceled) {
-                Utils.showToast('Export annulé', 'info');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Statistiques_Daara_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
+            } else {
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Statistiques - Daara');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
+            }
             } else {
                 Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
             }
@@ -1049,17 +1109,24 @@ class Rapports {
                         </button>
                         <button onclick="rapports.generateSelectedFiches()" class="btn-primary">
                             Générer PDF
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Gérer la sélection "tout"
-        document.getElementById('selectAll').addEventListener('change', function() {
-            const checkboxes = document.querySelectorAll('input[name="pensionnaire"]');
+            // Vérifier si l'API Electron est disponible
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                // Utiliser l'API Electron pour exporter
+                const fileName = `Fiches_Pensionnaires_${new Date().toISOString().split('T')[0]}.pdf`;
+                const result = await window.electronAPI.exportPDF(printHTML, fileName);
+                
+                if (result.success && !result.canceled) {
+                    Utils.showToast(`Document HTML créé. Utilisez Ctrl+P pour imprimer en PDF vers: ${result.filePath}`, 'success');
+                } else if (result.canceled) {
+                    Utils.showToast('Export annulé', 'info');
+                } else {
+                    Utils.showToast(`Erreur lors de l'export: ${result.error}`, 'error');
+                }
+            } else {
+                // Fallback: Méthode PDF simple via impression navigateur
+                this.printToPDF(printHTML, 'Fiches Pensionnaires - Daara');
+                Utils.showToast('Impression PDF ouverte - Sélectionnez "Enregistrer au format PDF"', 'success');
+            }
             checkboxes.forEach(cb => cb.checked = this.checked);
         });
     }
@@ -1403,6 +1470,80 @@ class Rapports {
         } catch (error) {
             Utils.handleError(error, 'lors de la préparation de l\'impression');
         }
+    }
+
+    // Méthodes utilitaires pour les exports
+    exportToCSV(data, fileName) {
+        // Convertir les données en CSV avec encodage UTF-8
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(","),
+            ...data.map(row => headers.map(header => `"${row[header] || ""}"`).join(","))
+        ].join("\n");
+
+        // Ajouter le BOM UTF-8 pour une meilleure compatibilité
+        const BOM = "\uFEFF";
+        const csvWithBOM = BOM + csvContent;
+
+        // Créer et télécharger le fichier avec encodage UTF-8
+        const blob = new Blob([csvWithBOM], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${fileName}_${new Date().toISOString().split("T")[0]}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    printToPDF(htmlContent, title) {
+        // Créer une nouvelle fenêtre pour l'impression
+        const printWindow = window.open("", "_blank", "width=800,height=600");
+        
+        // Écrire le contenu HTML avec styles d'impression
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>${title}</title>
+                <style>
+                    @media print {
+                        body { margin: 0; font-family: Arial, sans-serif; }
+                        .no-print { display: none !important; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .page-break { page-break-before: always; }
+                    }
+                    @media screen {
+                        body { margin: 20px; font-family: Arial, sans-serif; }
+                        .print-button { 
+                            position: fixed; top: 10px; right: 10px; 
+                            background: #007bff; color: white; border: none; 
+                            padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                        }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    }
+                </style>
+            </head>
+            <body>
+                <button class="print-button no-print" onclick="window.print()">🖨️ Imprimer / Sauvegarder PDF</button>
+                ${htmlContent}
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // Auto-ouvrir la boîte de dialogue d'impression après un court délai
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
     }
 }
 
